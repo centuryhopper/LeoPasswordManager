@@ -1,0 +1,38 @@
+
+@{
+    ViewData["Title"] = "Settings";
+}
+
+@* @(await Html.RenderComponentAsync<Settings>(RenderMode.Server)) *@
+
+<div class="m-5">
+    <button class="btn btn-danger" id="delete_account">Delete Account</button>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $(function(){
+            $('#delete_account').click(function(){
+                Swal.fire({
+                    title: "Warning!",
+                    text: "Are you sure you want to delete your account? This action is irreversible!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then(function(result){
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: "Your account has been deleted.",
+                            icon: "success"
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

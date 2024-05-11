@@ -1,0 +1,166 @@
+@inject NavigationManager NavManager
+@inject IAccountRepository accountRepository
+@inject IHttpContextAccessor httpContextAccessor
+
+
+<div class="container-fluid">
+    <EditForm Model="@Model" OnValidSubmit="HandleLogin" OnInvalidSubmit="ShowErrors">
+        <div class="card">
+            <h4 class="text-center card-header">
+                Log in
+            </h4>
+            <div class="card-body">
+                <DataAnnotationsValidator/>
+                <p class="form-group">
+                    <label class="m-2">Email</label>
+                    <RadzenTextBox @bind-Value="@Model.Email" class="form-control" />
+                    <ValidationMessage For="@(() => Model.Email)"/>
+                </p>
+                <p class="form-group">
+                    <label class="m-2">Password</label>
+                    <RadzenPassword class="form-control" @bind-Value="@Model.Password" Visible="@(PasswordVisible == false)" />
+                    <RadzenTextBox class="form-control" @bind-Value="@Model.Password" Visible="@PasswordVisible" />
+                    <br>
+                    Show password <RadzenCheckBox @bind-Value="@PasswordVisible" />
+                    <ValidationMessage For="@(() => Model.Password)"/>
+                </p>
+            </div>
+            <div class="m-3">
+                <button disabled="@loading" class="btn btn-primary">Login</button>
+                @if (loading)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                }
+            </div>
+        </div>
+
+        <div class="text-center">
+            <p>
+                Don't have an account?
+                <a href="/Account/Register">Sign up</a>
+            </p>
+        </div>
+    </EditForm>
+</div>
+
+@if (ShouldConfirmEmail)
+{
+    <ModalDialog Title="Email Not Confirmed"
+                Text="Please confirm your email before proceeding."
+                OnClose="@OnShouldConfirmEmailClose"
+                DialogType="ModalDialog.ModalDialogType.Ok"/>
+}
+
+@if (ShouldRegister)
+{
+    <ModalDialog Title="Error Logging In"
+                Text="We couldn't pull up your information."
+                OnClose="OnShouldRegisterClose"
+                DialogType="ModalDialog.ModalDialogType.Ok"/>
+
+}
+
+@if (InvalidLogin)
+{
+    <ModalDialog Title="Error"
+                Text="Invalid username or password."
+                OnClose="@OnInvalidLogin"
+                DialogType="ModalDialog.ModalDialogType.Ok"/>
+}
+
+
+@code {
+    private LoginModel Model = new();
+    private bool PasswordVisible = false;
+    private bool loading = false;
+    private bool ShouldRegister = false;
+    private bool ShouldConfirmEmail = false;
+    private bool InvalidLogin = false;
+
+    protected override void OnInitialized()
+    {
+        //Console.WriteLine(accountRepository is null);
+    }
+
+    protected async Task OnShouldConfirmEmailClose(bool accepted)
+    {
+        if (accepted)
+        {
+            // TODO: send out email
+        }
+        ShouldConfirmEmail = false;
+    }
+
+    protected async Task OnShouldRegisterClose(bool accepted)
+    {
+        if (accepted)
+        {
+            //NavManager.NavigateTo("register", forceLoad: true);
+        }
+        ShouldRegister = false;
+    }
+
+    protected async Task OnInvalidLogin(bool accepted)
+    {
+        if (accepted)
+        {
+            //NavManager.NavigateTo("register", forceLoad: true);
+        }
+        InvalidLogin = false;
+    }
+
+
+
+    private async Task HandleLogin()
+    {
+        loading = true;
+        // if email isn't confirmed then send error pop up saying that you have to confirm email first
+        if (await accountRepository.IsEmailConfirmed(Model.Email) == EmailConfirmStatus.NOT_CONFIRMED)
+        {
+            ShouldConfirmEmail = true;
+            loading = false;
+            return;
+        }
+
+        // we don't tell the user that this email isn't in our database to avoid data breaching
+        // that's why we give a generic error message below
+        if (await accountRepository.IsEmailConfirmed(Model.Email) == EmailConfirmStatus.ACCOUNT_NOT_REGISTERED)
+        {
+            ShouldRegister = true;
+            loading = false;
+            return;
+        }
+
+        var result = await accountRepository.LoginAsync(Model);
+
+        loading = false;
+
+        if (result.Successful)
+        {
+            List<Claim> claims = [
+                new(ClaimTypes.NameIdentifier, result.Id),
+                new(ClaimTypes.Email, result.Email),
+                new(ClaimTypes.Role, result.Role),
+            ];
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var authProperties = new AuthenticationProperties {
+                IsPersistent = true,
+            };
+
+            await httpContextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+            NavManager.NavigateTo("/Home/Passwords?userId="+result.Id, forceLoad: true);
+        }
+        else
+        {
+            ShowErrors();
+        }
+    }
+
+    private void ShowErrors()
+    {
+        InvalidLogin = true;
+    }
+}

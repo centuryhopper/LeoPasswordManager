@@ -1,0 +1,153 @@
+@inject IAccountRepository accountRepository
+
+<style>
+    .no-bullets {
+        list-style-type: none; /* Removes default bullets */
+        padding-left: 0; /* Optional: removes default left padding */
+    }
+</style>
+
+<div class="container-fluid">
+    <EditForm Model="@Model" OnValidSubmit="HandleEditProfile" OnInvalidSubmit="ShowErrors">
+        <div class="card">
+            <h4 class="text-center card-header">
+                Edit Profile
+            </h4>
+            <div class="card-body">
+                <DataAnnotationsValidator />
+                <p class="form-group">
+                    <label class="m-2">Email</label>
+                    <RadzenTextBox @bind-Value="Model.Email" class="form-control" />
+                    <ValidationMessage For="@(() => Model.Email)" />
+                </p>
+                <p class="form-group">
+                    <label class="m-2">First Name</label>
+                    <RadzenTextBox @bind-Value="Model.FirstName" class="form-control" />
+                    <ValidationMessage For="@(() => Model.FirstName)" />
+                </p>
+                <p class="form-group">
+                    <label class="m-2">Last Name</label>
+                    <RadzenTextBox @bind-Value="Model.LastName" class="form-control" />
+                    <ValidationMessage For="@(() => Model.LastName)" />
+                </p>
+                <p class="form-group">
+                    <label class="m-2">Old Password</label>
+                    <RadzenPassword class="form-control" @bind-Value="@Model.OldPassword"
+                        Visible="@(OldPasswordVisible == false)" />
+                    <RadzenTextBox class="form-control" @bind-Value="@Model.OldPassword"
+                        Visible="@OldPasswordVisible" />
+                    <br>
+                    Show
+                    <RadzenCheckBox @bind-Value="@OldPasswordVisible" />
+                </p>
+                <p class="form-group">
+                    <label class="m-2">New Password</label>
+                    <RadzenPassword class="form-control" @bind-Value="@Model.NewPassword"
+                        Visible="@(NewPasswordVisible == false)" />
+                    <RadzenTextBox class="form-control" @bind-Value="@Model.NewPassword"
+                        Visible="@NewPasswordVisible" />
+                    <ValidationMessage For="@(() => Model.NewPassword)" />
+                </p>
+                <p class="form-group">
+                    <label class="m-2">Confirm New Password</label>
+                    <RadzenPassword class="form-control" @bind-Value="@Model.ConfirmNewPassword"
+                        Visible="@(NewPasswordVisible == false)" />
+                    <RadzenTextBox class="form-control" @bind-Value="@Model.ConfirmNewPassword"
+                        Visible="@NewPasswordVisible" />
+                    <br>
+                    Show
+                    <RadzenCheckBox @bind-Value="@NewPasswordVisible" />
+                    <ValidationMessage For="@(() => Model.ConfirmNewPassword)" />
+                </p>
+                <p class="form-group">
+                    @if (Roles is not null && Roles.Any())
+                    {
+                        <select class="form-control" @bind="@Model.Role">
+                            @foreach (var role in Roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    }
+                    <ValidationMessage For="@(() => Model.Role)" />
+                </p>
+            </div>
+            <div class="m-3">
+                <button class="btn btn-primary" disabled="@isLoading">
+                    <span class="@GetSpinnerClass()"></span> Submit Changes
+                </button>
+            </div>
+        </div>
+    </EditForm>
+
+    @* @if (EditMessages is not null && EditMessages.Any())
+    {
+        <ul>
+            @foreach (var message in EditMessages)
+            {
+                <li class="display-6 no-bullets">@message</li>
+            }
+        </ul>
+    } *@
+</div>
+
+
+@code {
+
+    private EditAccountModel Model = new();
+    private bool OldPasswordVisible, NewPasswordVisible;
+    private bool showErrors, isLoading;
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    private IEnumerable<string> Roles { get; set; }
+    private IEnumerable<string> EditMessages { get; set; }
+    private EditContext editContext;
+
+    protected override async Task OnInitializedAsync()
+    {
+        editContext = new(Model);
+        Roles = await accountRepository.GetRolesAsync();
+        //foreach (var role in Roles)
+        //{
+        // Console.WriteLine(role);
+        //}
+    }
+
+    private string GetSpinnerClass()
+    {
+        return isLoading ? "spinner-border spinner-border-sm" : string.Empty;
+    }
+
+    private async Task HandleEditProfile()
+    {
+        // update user info
+        // any non null values will be updated
+        // only update user password to the new one if the old password is correct.
+        Model.Id = UserId;
+        isLoading = true;
+        EditMessages = await accountRepository.UpdateUserAsync(Model);
+        isLoading = false;
+        if (EditMessages.Contains("success!"))
+            Model = new();
+        await jsRuntime.InvokeVoidAsync("alert", string.Join("\n", EditMessages));
+    }
+
+    private async void ShowErrors()
+    {
+        var validationMessages = new ValidationMessageStore(editContext);
+        EditMessages = editContext.GetValidationMessages();
+        // Do something with the validation messages, like displaying a custom error message
+        // You can loop through editContext.GetValidationMessages() to retrieve error messages for each field
+        // For example:
+        //foreach (var message in editContext.GetValidationMessages())
+        //{
+        // // You can use this message to display errors or perform any custom logic
+        // // For demonstration purposes, we'll just print the messages to the console
+        // Console.WriteLine(message);
+        //}
+        //await jsRuntime.InvokeVoidAsync("alert", "An error occurred");
+    }
+
+}

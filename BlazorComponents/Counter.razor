@@ -1,0 +1,49 @@
+﻿@inject NavigationManager NavigationManager
+@* @inject IAccountRepository accountRepository *@
+
+
+
+<h1>@Title</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+
+<button class="btn btn-primary" @onclick="ShowModal">Show Modal</button>
+
+@if (show)
+{
+    <ModalDialog Title="pop up"
+        Text="this is a modal"
+        OnClose="OnClose"
+        DialogType="ModalDialog.ModalDialogType.OkCancel" />
+}
+
+
+@code {
+    private int currentCount = 0;
+    [Parameter] public string Title { get; set; } = "";
+    bool show = false;
+
+    private void ShowModal()
+    {
+        show = true;
+    }
+
+    private async Task OnClose(bool accepted)
+    {
+        if (accepted)
+        {
+            Console.WriteLine("accepted!");
+        }
+        show = false;
+    }
+
+    private void IncrementCount()
+    {
+        //currentCount++;
+
+        NavigationManager.NavigateTo("/Home/Privacy", forceLoad: true);
+    }
+}
