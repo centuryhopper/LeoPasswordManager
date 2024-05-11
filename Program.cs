@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using MVC_RazorComp_PasswordManager.Contexts;
 using MVC_RazorComp_PasswordManager.Interfaces;
 using MVC_RazorComp_PasswordManager.Repositories;
