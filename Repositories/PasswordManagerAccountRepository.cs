@@ -2,12 +2,12 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
-using MVC_RazorComp_PasswordManager.Contexts;
-using MVC_RazorComp_PasswordManager.Interfaces;
-using MVC_RazorComp_PasswordManager.Models;
+using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Interfaces;
+using LeoPasswordManager.Models;
 
 
-namespace MVC_RazorComp_PasswordManager.Repositories;
+namespace LeoPasswordManager.Repositories;
 
 public class PasswordManagerAccountRepository : IPasswordManagerAccountRepository<PasswordmanagerAccount>
 {

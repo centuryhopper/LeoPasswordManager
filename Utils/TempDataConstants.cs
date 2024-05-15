@@ -1,4 +1,4 @@
-namespace MVC_RazorComp_PasswordManager.Utilities;
+namespace LeoPasswordManager.Utilities;
 
 public static partial class Constants
 {

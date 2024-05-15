@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
-namespace MVC_RazorComp_PasswordManager.Models;
+namespace LeoPasswordManager.Models;
 
 public class RegisterModel
 {

@@ -3,7 +3,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MVC_RazorComp_PasswordManager.Contexts;
+namespace LeoPasswordManager.Contexts;
 
 
 /// <summary>

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace MVC_RazorComp_PasswordManager.Contexts;
+namespace LeoPasswordManager.Contexts;
 
 public partial class PasswordAccountContext : DbContext
 {

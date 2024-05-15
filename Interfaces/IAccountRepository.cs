@@ -1,10 +1,13 @@
-using MVC_RazorComp_PasswordManager.Contexts;
-using MVC_RazorComp_PasswordManager.Models;
+using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Models;
 
-namespace MVC_RazorComp_PasswordManager.Interfaces;
+namespace LeoPasswordManager.Interfaces;
 
 public interface IAccountRepository
 {
+    Task<UserModel?> GetUserByEmailAsync(string email);
+    Task<AuthStatus> ChangePasswordAsync(string userId, string newPassword);
+    Task<AuthStatus>  CheckPassword(string email, string password);
     Task<AuthStatus> LoginAsync(LoginModel model);
     Task<AuthStatus> LogoutAsync(string userId);
     Task<AuthStatus> RegisterAsync(RegisterModel model);

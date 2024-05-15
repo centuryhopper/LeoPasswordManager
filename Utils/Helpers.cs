@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MimeKit;
 using MailKit.Net.Smtp;
 
-namespace MVC_RazorComp_PasswordManager.Utilities;
+namespace LeoPasswordManager.Utilities;
 
 public static class Helpers
 {

@@ -1,4 +1,4 @@
-namespace MVC_RazorComp_PasswordManager.Models;
+namespace LeoPasswordManager.Models;
 
 public class PasswordAccountModel
 {

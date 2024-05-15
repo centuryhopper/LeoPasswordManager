@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
-using MVC_RazorComp_PasswordManager.Contexts;
-using MVC_RazorComp_PasswordManager.Interfaces;
-using MVC_RazorComp_PasswordManager.Repositories;
+using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Interfaces;
+using LeoPasswordManager.Repositories;
 
 
 // TODO: use action filters to annotate controllers
@@ -27,18 +27,19 @@ builder
         options.Cookie.HttpOnly = true;
     });
 
-builder.Services.Configure<CookieAuthenticationOptions>(config => {
+builder.Services.Configure<CookieAuthenticationOptions>(config =>
+{
     config.AccessDeniedPath = new PathString("/AccessDenied");
     config.Events = new CookieAuthenticationEvents
-            {
-                OnRedirectToAccessDenied = context =>
-                {
-                    // Custom logic when redirecting to access denied page
-                    context.Response.Redirect("/AccessDenied");
-                    return Task.CompletedTask;
-                },
-                // Add other event handlers as needed
-            };
+    {
+        OnRedirectToAccessDenied = context =>
+        {
+            // Custom logic when redirecting to access denied page
+            context.Response.Redirect("/AccessDenied");
+            return Task.CompletedTask;
+        },
+        // Add other event handlers as needed
+    };
 });
 
 builder.Services.AddAuthorization(options =>
@@ -61,8 +62,8 @@ builder.Services.AddScoped<
     PasswordManagerAccountRepository
 >();
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8081";
-builder.WebHost.UseUrls($"http://*:{port}");
+// var port = Environment.GetEnvironmentVariable("PORT") ?? "8081";
+// builder.WebHost.UseUrls($"http://*:{port}");
 
 var app = builder.Build();
 

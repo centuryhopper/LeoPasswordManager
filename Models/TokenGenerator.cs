@@ -2,7 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MVC_RazorComp_PasswordManager.Models;
+namespace LeoPasswordManager.Models;
 
 public static class TokenGenerator
 {

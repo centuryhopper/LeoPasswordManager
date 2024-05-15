@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MVC_RazorComp_PasswordManager.Contexts;
-using MVC_RazorComp_PasswordManager.Interfaces;
+using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Interfaces;
 
-namespace MVC_RazorComp_PasswordManager.Controllers;
+namespace LeoPasswordManager.Controllers;
 
 public class HomeController : Controller
 {
@@ -20,7 +20,7 @@ public class HomeController : Controller
     [Authorize, HttpPost]
     public async Task<IActionResult> UploadCSV(IFormFile file, string userId)
     {
-        
+
         var result = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
 
         if (result is null)
@@ -45,7 +45,7 @@ public class HomeController : Controller
     {
         return View();
     }
-    
+
 
     // public IActionResult Privacy()
     // {

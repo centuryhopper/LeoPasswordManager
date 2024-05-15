@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MVC_RazorComp_PasswordManager.Interfaces;
-using MVC_RazorComp_PasswordManager.Models;
-using MVC_RazorComp_PasswordManager.Utilities;
+using LeoPasswordManager.Interfaces;
+using LeoPasswordManager.Models;
+using LeoPasswordManager.Utilities;
 
-namespace MVC_RazorComp_PasswordManager.Controllers;
+namespace LeoPasswordManager.Controllers;
 
 [Authorize]
 public class AccountController : Controller
@@ -26,6 +26,43 @@ public class AccountController : Controller
     {
         return View();
     }
+
+    [AllowAnonymous]
+    public IActionResult ChangePassword()
+    {
+        return View();
+    }
+
+    [HttpPost, AllowAnonymous]
+    public async Task<IActionResult> ChangePassword(ChangePasswordVM model)
+    {
+        if (ModelState.IsValid)
+        {
+            var user = await accountRepository.GetUserByEmailAsync(model.CurrentEmail);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // The new password did not meet the complexity rules or
+            // the current password is incorrect. Add these errors to
+            // the ModelState and rerender ChangePassword view
+
+            var authStatus = await accountRepository.CheckPassword(user.Email, model.CurrentPassword);
+            if (!authStatus.Successful)
+            {
+                ModelState.AddModelError(string.Empty, authStatus.Error!);
+                return View();
+            }
+
+            await accountRepository.ChangePasswordAsync(user.Id, model.NewPassword);
+
+            return View("ChangePasswordConfirmation");
+        }
+
+        return View(model);
+    }
+
 
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string token, string userId)
@@ -108,7 +145,7 @@ public class AccountController : Controller
             TempData[TempDataKeys.ALERT_ERROR] = string.Join("$$$", lst);
             return RedirectToAction(nameof(Register));
         }
-        
+
         var result = await accountRepository.RegisterAsync(vm);
 
         if (result.Successful)

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MVC_RazorComp_PasswordManager.Contexts;
+namespace LeoPasswordManager.Contexts;
 
 public partial class Userrole
 {

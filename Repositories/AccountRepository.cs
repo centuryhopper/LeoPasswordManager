@@ -1,13 +1,13 @@
 using System.Collections;
-using MVC_RazorComp_PasswordManager.Contexts;
+using LeoPasswordManager.Contexts;
 using Microsoft.EntityFrameworkCore;
-using MVC_RazorComp_PasswordManager.Models;
-using MVC_RazorComp_PasswordManager.Interfaces;
+using LeoPasswordManager.Models;
+using LeoPasswordManager.Interfaces;
 using System.Net.Mail;
 using System.Net;
-using MVC_RazorComp_PasswordManager.Utilities;
+using LeoPasswordManager.Utilities;
 
-namespace MVC_RazorComp_PasswordManager.Repositories;
+namespace LeoPasswordManager.Repositories;
 
 /*
 insert into roles
@@ -60,7 +60,7 @@ public class AccountRepository : IAccountRepository
         return user.Emailconfirmed.Get(0) ? EmailConfirmStatus.CONFIRMED : EmailConfirmStatus.NOT_CONFIRMED;
     }
 
-    private UserModel? GetUserByEmailAsync(string email)
+    public async Task<UserModel?> GetUserByEmailAsync(string email)
     {
         var users = passwordAccountContext.PasswordmanagerUsers.AsQueryable();
         var roles = passwordAccountContext.Roles.AsQueryable();
@@ -86,7 +86,27 @@ public class AccountRepository : IAccountRepository
                            Role = r.Name
                        };
 
-        return dbResult.FirstOrDefault();
+        return await dbResult.FirstOrDefaultAsync();
+    }
+
+    public async Task<AuthStatus> CheckPassword(string email, string password)
+    {
+        var userModel = await GetUserByEmailAsync(email);
+
+        if (userModel is null)
+        {
+            return new AuthStatus {
+                Successful = false,
+                Error = "Couldn't find you in the system."
+            };
+        }
+
+        var hashedPW = encryptionContext.OneWayHash($"{password}{userModel.Salt}");
+
+        return new AuthStatus {
+            Successful = hashedPW == userModel.PasswordHash,
+            Error = hashedPW == userModel.PasswordHash ? "" : "Current password entered is incorrect",
+        };
     }
 
     public async Task<AuthStatus> LoginAsync(LoginModel model)
@@ -96,7 +116,7 @@ public class AccountRepository : IAccountRepository
         // then return the user
         // otherwise return null
 
-        var userModel = GetUserByEmailAsync(model.Email);
+        var userModel = await GetUserByEmailAsync(model.Email);
 
         // PasswordmanagerUser dbResult = null;
 
@@ -129,9 +149,37 @@ public class AccountRepository : IAccountRepository
         return new AuthStatus { Successful = true };
     }
 
+    public async Task<AuthStatus> ChangePasswordAsync(string userId, string newPassword)
+    {
+        try
+        {
+            int salt = new Random().Next();
+            var saltedPW = $"{newPassword}{salt}";
+            var passwordHash = encryptionContext.OneWayHash(saltedPW);
+
+            var user = await GetUserByIdAsync(userId);
+            user.Passwordhash = passwordHash;
+            user.Salt = salt.ToString();
+
+            await passwordAccountContext.SaveChangesAsync();
+        }
+        catch (System.Exception ex)
+        {
+            return new AuthStatus {
+                Successful = false,
+                Error = ex.Message,
+            };
+        }
+
+        return new AuthStatus {
+                Successful = true,
+        };
+
+    }
+
     public async Task<AuthStatus> RegisterAsync(RegisterModel model)
     {
-        var dbResult = GetUserByEmailAsync(model.Email);
+        var dbResult = await GetUserByEmailAsync(model.Email);
 
         if (dbResult is not null)
         {
@@ -191,16 +239,17 @@ public class AccountRepository : IAccountRepository
             string roleId = Guid.NewGuid().ToString();
             if (role is null)
             {
-                await passwordAccountContext.Roles.AddAsync(new Role {
+                await passwordAccountContext.Roles.AddAsync(new Role
+                {
                     Id = roleId,
                     Name = "User"
                 });
             }
 
-            await passwordAccountContext.Userroles.AddAsync(new Userrole { Roleid = role?.Id ?? roleId, Userid = UserId, Id = Guid.NewGuid().ToString()});
+            await passwordAccountContext.Userroles.AddAsync(new Userrole { Roleid = role?.Id ?? roleId, Userid = UserId, Id = Guid.NewGuid().ToString() });
             await passwordAccountContext.SaveChangesAsync();
 
-            return new AuthStatus { Successful = true, Id = UserId, Email = model.Email, Name = model.FirstName + " " + model.LastName, Role = role?.Name ?? roleId};
+            return new AuthStatus { Successful = true, Id = UserId, Email = model.Email, Name = model.FirstName + " " + model.LastName, Role = role?.Name ?? roleId };
         }
         catch (System.Exception e)
         {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
-using MVC_RazorComp_PasswordManager.Models;
+using LeoPasswordManager.Models;
 
-namespace MVC_RazorComp_PasswordManager.Interfaces;
+namespace LeoPasswordManager.Interfaces;
 
 public interface IPasswordManagerAccountRepository<T>
 {
