@@ -25,13 +25,15 @@ public class AccountRepository : IAccountRepository
     private readonly PasswordAccountContext passwordAccountContext;
     private readonly IHttpContextAccessor httpContextAccessor;
     private readonly IConfiguration configuration;
+    private readonly IHostEnvironment env;
 
-    public AccountRepository(EncryptionContext encryptionContext, PasswordAccountContext passwordAccountContext, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+    public AccountRepository(EncryptionContext encryptionContext, PasswordAccountContext passwordAccountContext, IHttpContextAccessor httpContextAccessor, IConfiguration configuration, IHostEnvironment env)
     {
         this.encryptionContext = encryptionContext;
         this.passwordAccountContext = passwordAccountContext;
         this.httpContextAccessor = httpContextAccessor;
         this.configuration = configuration;
+        this.env = env;
     }
 
     public async Task<DeleteUserProfileStatus> DeleteUserAsync(string Id)
@@ -332,9 +334,11 @@ public class AccountRepository : IAccountRepository
 
     private void SendConfirmationEmail(string recipientEmail, string confirmationLink)
     {
+        var smtpInfo =  env.IsDevelopment() ? configuration.GetConnectionString("smtp_client") : Environment.GetEnvironmentVariable("smtp_client");
+
         // Configure email settings
-        string senderEmail = configuration.GetConnectionString("smtp_client").Split("|")[0];
-        string senderPassword = configuration.GetConnectionString("smtp_client").Split("|")[1];
+        string senderEmail = smtpInfo.Split("|")[0];
+        string senderPassword = smtpInfo.Split("|")[1];
 
         // string receivers = config.GetConnectionString("smtp_receivers");
 
