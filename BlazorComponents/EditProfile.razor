@@ -134,14 +134,15 @@
         await jsRuntime.InvokeVoidAsync("alert", string.Join("\n", EditMessages));
     }
 
-    private async void ShowErrors()
+    private async Task ShowErrors()
     {
         var validationMessages = new ValidationMessageStore(editContext);
         EditMessages = editContext.GetValidationMessages();
         // Do something with the validation messages, like displaying a custom error message
         // You can loop through editContext.GetValidationMessages() to retrieve error messages for each field
         // For example:
-        //foreach (var message in editContext.GetValidationMessages())
+        //foreach (var message in editContext.GetValidationMessages())l
+
         //{
         // // You can use this message to display errors or perform any custom logic
         // // For demonstration purposes, we'll just print the messages to the console
