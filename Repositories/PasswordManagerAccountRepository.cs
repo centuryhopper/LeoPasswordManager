@@ -5,11 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Models;
+using LeoPasswordManager.Utilities;
 
 
 namespace LeoPasswordManager.Repositories;
 
-public class PasswordManagerAccountRepository : IPasswordManagerAccountRepository<PasswordmanagerAccount>
+public class PasswordManagerAccountRepository : IPasswordManagerAccountRepository<PasswordAccountModel>
 {
     private readonly EncryptionContext encryptionContext;
     private readonly ILogger<PasswordManagerAccountRepository> logger;
@@ -22,43 +23,51 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
         this.PasswordAccountContext = PasswordAccountContext;
     }
 
-    public async Task<PasswordmanagerAccount?> CreateAsync(PasswordmanagerAccount model)
+    public async Task<PasswordAccountModel?> GetAccountModelAsync(string id, string userId)
+    {
+        var accountModel = await PasswordAccountContext.PasswordmanagerAccounts.FindAsync(id, userId);
+
+        return accountModel?.ToPasswordManagerAccountModel();
+    }
+
+    public async Task<PasswordAccountModel?> CreateAsync(PasswordAccountModel model)
     {
         model.Id = Guid.NewGuid().ToString();
-        model.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password));
+        model.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password!));
         model.CreatedAt = DateTime.Now.ToString("yyyy-MM-dd");
-        await PasswordAccountContext.PasswordmanagerAccounts.AddAsync(model);
+        model.LastUpdatedAt = DateTime.Now.ToString("yyyy-MM-dd");
+        await PasswordAccountContext.PasswordmanagerAccounts.AddAsync(model.ToPasswordManagerAccount());
         await PasswordAccountContext.SaveChangesAsync();
         return model;
     }
 
-    public async Task<PasswordmanagerAccount?> DeleteAsync(PasswordmanagerAccount model)
+    public async Task<PasswordAccountModel?> DeleteAsync(PasswordAccountModel model)
     {
-        var queryModel = await PasswordAccountContext.PasswordmanagerAccounts.FindAsync(model.Id, model.Userid);
+        var queryModel = await PasswordAccountContext.PasswordmanagerAccounts.FindAsync(model.Id, model.UserId);
         PasswordAccountContext.PasswordmanagerAccounts.Remove(queryModel!);
         await PasswordAccountContext.SaveChangesAsync();
         return model;
     }
 
-    public async Task<IEnumerable<PasswordmanagerAccount>> GetAllAccountsAsync(string userId)
+    public async Task<IEnumerable<PasswordAccountModel>> GetAllAccountsAsync(string userId)
     {
         var results = await PasswordAccountContext.PasswordmanagerAccounts.AsNoTracking().Where(a => a.Userid == userId).ToListAsync();
         // var results = await PasswordAccountContext.PasswordmanagerAccounts.AsNoTracking().ToListAsync();
 
         if (!results.Any())
         {
-            return Enumerable.Empty<PasswordmanagerAccount>();
+            return Enumerable.Empty<PasswordAccountModel>();
         }
 
         return results.Select(m =>
         {
-            return new PasswordmanagerAccount
+            return new PasswordAccountModel
             {
                 Id = m.Id,
                 Title = m.Title,
                 Username = m.Username,
                 Password = encryptionContext.Decrypt(Convert.FromBase64String(m.Password)).Replace(",", "$"),
-                Userid = m.Userid,
+                UserId = m.Userid,
                 CreatedAt = m.CreatedAt,
                 LastUpdatedAt = m.LastUpdatedAt
             };
@@ -71,9 +80,9 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
         return cnt;
     }
 
-    public async Task<PasswordmanagerAccount?> UpdateAsync(PasswordmanagerAccount model)
+    public async Task<PasswordAccountModel?> UpdateAsync(PasswordAccountModel model)
     {
-        var dbModel = await PasswordAccountContext.PasswordmanagerAccounts.FindAsync(model.Id, model.Userid);
+        var dbModel = await PasswordAccountContext.PasswordmanagerAccounts.FindAsync(model.Id, model.UserId);
         dbModel!.LastUpdatedAt = DateTime.Now.ToString("yyyy-MM-dd");
         dbModel.Title = model.Title;
         dbModel.Username = model.Username;
@@ -93,19 +102,19 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
 
         using var streamReader = new StreamReader(file.OpenReadStream());
         using var csvReader = new CsvReader(streamReader, config);
-        IAsyncEnumerable<PasswordmanagerAccount> records;
+        IAsyncEnumerable<PasswordAccountModel> records;
 
         try
         {
             csvReader.Context.RegisterClassMap<PasswordsMapper>();
-            records = csvReader.GetRecordsAsync<PasswordmanagerAccount>();
+            records = csvReader.GetRecordsAsync<PasswordAccountModel>();
 
             await foreach (var record in records)
             {
-                await CreateAsync(new PasswordmanagerAccount
+                await CreateAsync(new PasswordAccountModel
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Userid = userid,
+                    UserId = userid,
                     Title = record.Title,
                     Username = record.Username,
                     Password = record.Password,

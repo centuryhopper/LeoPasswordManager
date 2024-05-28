@@ -5,6 +5,7 @@ namespace LeoPasswordManager.Interfaces;
 
 public interface IPasswordManagerAccountRepository<T>
 {
+    Task<PasswordAccountModel?> GetAccountModelAsync(string id, string userId);
     Task<IEnumerable<T>> GetAllAccountsAsync(string userId);
     Task<T?> CreateAsync(T model);
     Task<T?> UpdateAsync(T model);

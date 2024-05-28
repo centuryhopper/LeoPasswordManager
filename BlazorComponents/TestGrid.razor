@@ -1,0 +1,347 @@
+@inject IPasswordManagerAccountRepository<PasswordAccountModel> passwordManagerAccountRepository
+
+@* 
+
+public string? Id { get; set; } = null!;
+
+    public string? Userid { get; set; } = null!;
+
+    public string? Title { get; set; } = null!;
+
+    public string? Username { get; set; } = null!;
+
+    public string? Password { get; set; } = null!;
+
+    public string? CreatedAt { get; set; }
+
+    public string? LastUpdatedAt { get; set; }
+
+ *@
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <EditForm Model="model" OnSubmit="AddAccountAsync" Enhance>
+                        <div class="hstack gap-2">
+                            <label class="label-control">Title</label>
+                            <InputText @bind-Value="model.Title" class="form-control"></InputText>
+                            <label class="label-control">Username</label>
+                            <InputText @bind-Value="model.Username" class="form-control"></InputText>
+                            <label class="label-control">Password</label>
+                            <InputText @bind-Value="model.Password" class="form-control"></InputText>
+                            <label class="label-control">Date Added</label>
+                            <InputDate @bind-Value="SelectedDate" class="form-control "></InputDate>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </EditForm>
+                </div>
+                <div class="card-body">
+                    @if (!accountQueryable.Any())
+                    {
+                        <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false"
+                        Mode="ProgressBarMode.Indeterminate" />
+                    }
+                    <QuickGrid Items="@accountQueryable" Pagination="pagination">
+                        <PropertyColumn Property="@(p => p.Username)" Sortable="false" Align="Align.Center" />
+                        <PropertyColumn Property="@(p => p.Password)" Sortable="false" Align="Align.Center" />
+
+                        <PropertyColumn Property="@(c => c.Title)" Sortable="true" Class="country-name">
+                            <ColumnOptions>
+                                <div class="search-box">
+                                    <input type="search" autofocus @onchange="SearchPasswordAccount" placeholder="Password account title..." />
+                                </div>
+                            </ColumnOptions>
+                        </PropertyColumn>
+
+                        <PropertyColumn Property="@(p => p.CreatedAt)" Sortable="true" />
+
+                        <PropertyColumn Property="@(p => p.LastUpdatedAt)" Sortable="true" />
+                   
+                        <TemplateColumn Title="Action">
+                            <button @onclick="@(() => Edit(context))" class="btn btn-info">Edit</button>
+                            <button @onclick="@(() => DeleteAsync(context))" class="btn btn-danger">Delete</button>
+                        </TemplateColumn>
+                    </QuickGrid>
+                </div>
+                <div class="card-footer"><Paginator State="@pagination" /></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container-fluid mt-5">
+    <RadzenCard>
+        <div class="row px-3">
+            <div class="col-md-3 p-3">
+            </div>
+            <div class="col-md-3 p-3">
+                <RadzenButton Text="Export CSV" Icon="grid_on" Click="@Export" class="mb-4" />
+            </div>
+            <div class="col-md-3 p-3">
+                <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Import passwords</RadzenText>
+                <RadzenUpload 
+                    @ref="upload" 
+                    Auto="false" 
+                    Multiple="false" 
+                    Url=@($"Home/UploadCSV?userId={UserId}")
+                    Change=@(args => OnChange(args, "Manual Upload"))
+                    Progress=@(args => OnProgress(args, "Manual Upload")) 
+                    Complete="@(args => OnComplete(args))"
+                    Error="@(args => OnError(args))"
+                    class="w-100" 
+                    ChooseText="Select File" />
+                
+                @if (upload is not null && upload.HasValue)
+                {
+                    <RadzenButton Text="Upload" Click=@(args => UploadDocument(args)) class="d-block mt-4" />
+                }
+                <div>
+                    <span class="mt-3" style="font-weight:bold;">Click on the link to get the CSV file format sample: <a href="templates/example.csv">Example File</a></span>
+                </div>
+            </div>
+            <div class="col-md-3 p-3">
+            </div>
+        </div>
+    </RadzenCard>
+</div>
+
+@if (DeleteDialogOpen)
+{
+    <ModalDialog Title="Warning"
+                Text="Are you sure you want to delete this entry?"
+                OnClose="@OnDeleteDialogClose"
+                DialogType="ModalDialog.ModalDialogType.DeleteCancel">
+    </ModalDialog>
+}
+
+
+
+@code {
+
+    //Pagination
+    PaginationState pagination = new PaginationState { ItemsPerPage = 5 };
+    private IQueryable<PasswordAccountModel> accountQueryable = Enumerable.Empty<PasswordAccountModel>().AsQueryable();
+
+    [SupplyParameterFromForm]
+    PasswordAccountModel model {get;set;} = new();
+
+    private static List<PasswordAccountModel> accountLst = new();
+    private DateOnly SelectedDate = DateOnly.FromDateTime(DateTime.Now);
+
+    [Parameter]
+    public string? UserId {get;set;}
+
+    private bool DeleteDialogOpen { get; set; } = false;
+    private PasswordAccountModel accountToDelete { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConvertListToQueryable();
+    }
+
+    private async Task OnDeleteDialogClose(bool accepted)
+    {
+        if (accepted)
+        {
+            await passwordManagerAccountRepository.DeleteAsync(accountToDelete);
+            await GetDataAgainAsync();
+            accountToDelete = null;
+        }
+        else
+        {
+           
+        }
+        DeleteDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private void OpenDeleteDialog(PasswordAccountModel acc)
+    {
+        DeleteDialogOpen = true;
+        accountToDelete = acc;
+        StateHasChanged();
+    }
+
+    private async Task AddAccountAsync()
+    {
+        var records = await passwordManagerAccountRepository.GetAllAccountsAsync(UserId!);
+        model.LastUpdatedAt = SelectedDate.ToString("yyyy-MM-dd");
+
+        // Update
+        if (!string.IsNullOrEmpty(model.Id))
+        {
+            //Console.WriteLine("yo "+model.Id);
+            var addUpdatedRecord = await passwordManagerAccountRepository.UpdateAsync(model);
+            model = new();
+            await GetDataAgainAsync(); 
+            return;
+        }
+
+        //Add
+        if (string.IsNullOrEmpty(model.Title))
+        {
+            return;
+        }
+
+        model.Id = Guid.NewGuid().ToString();
+        //accountLst.Add(model); 
+        var addNewRecord = await passwordManagerAccountRepository.CreateAsync(model);
+        model = new();
+        await GetDataAgainAsync();
+        return;
+    }
+
+    // Load data from List to the Queryable container
+    private async Task ConvertListToQueryable()
+    {
+        var records = await passwordManagerAccountRepository.GetAllAccountsAsync(UserId!);
+        if (!records.Any()) return;
+        foreach (var account in records.OrderBy(_ => _.LastUpdatedAt))
+        {
+            accountQueryable = accountQueryable.Concat(new[] { account }.AsQueryable());
+        }
+        pagination.TotalItemCountChanged += (sender, eventArgs) => StateHasChanged();
+    }
+
+    //clear container and reload
+    private async Task GetDataAgainAsync()
+    {
+        accountQueryable = Enumerable.Empty<PasswordAccountModel>().AsQueryable();
+        await ConvertListToQueryable();
+    }
+
+    void Edit(PasswordAccountModel incomingModel)
+    {
+        //SelectedDate = DateOnly.Parse(incomingModel.CreatedAt!);
+        SelectedDate = DateOnly.FromDateTime(DateTime.Now);
+        model = incomingModel;
+    }
+
+    private async Task DeleteAsync(PasswordAccountModel incomingModel)
+    {
+        //var parameters = new ModalParameters();
+        //parameters.Add(nameof(ConfirmationDialog.Message), "Are you sure you want to delete this record?");
+        //var confirmModal = Modal.Show<ConfirmationDialog>("Warning", parameters);
+        //var modalResult = await confirmModal.Result;
+//
+        //if (!modalResult.Cancelled)
+        //{
+        //    var deleteRecord = await apiConsumerService.DeletePasswordManagerAccountAsync(incomingModel);
+//
+        //    if (deleteRecord is not null)
+        //    {
+        //        await GetDataAgainAsync();
+        //    }
+        //}
+
+        OpenDeleteDialog(incomingModel);
+    }
+
+    //Search Password Account
+    private async Task SearchPasswordAccount(ChangeEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(e.Value!.ToString()))
+        {
+            var records = await passwordManagerAccountRepository.GetAllAccountsAsync(UserId!);
+
+            var result = records.Where(c => c.Title!.Contains(e.Value!.ToString()!, StringComparison.CurrentCultureIgnoreCase)).ToList();
+
+            // modify to something that depends on what we searched for. If we dont find anything, show nothing. Otherwise show the filtered list
+            accountQueryable = Enumerable.Empty<PasswordAccountModel>().AsQueryable();
+            
+            if (result.Count == 0)
+            {
+                return;
+            }
+
+            if (result.Any())
+            {
+                foreach (var account in result.OrderBy(_ => _.CreatedAt))
+                {
+                    accountQueryable = accountQueryable.Concat(new[] { account }.AsQueryable());
+                }
+            }
+            return;
+        }
+        await GetDataAgainAsync();
+    }
+    
+
+    private async void Export()
+    {
+        Console.WriteLine("exporting...");
+        
+        StringBuilder builder = new();
+
+        builder.AppendLine("Title,Username,Password,CreatedAt,LastUpdatedAt");
+
+        foreach (var acc in accountQueryable.OrderBy(_ => _.CreatedAt))
+        {
+            builder.AppendLine($"{acc.Title},{acc.Username},{acc.Password.Replace(",", "+")},{acc.CreatedAt},{acc.LastUpdatedAt}");
+        }
+
+        await jsRuntime.InvokeVoidAsync("saveAsFile", "sensitive.csv", builder.ToString());
+    }
+
+    private RadzenUpload upload;
+
+    private void OnChange(UploadChangeEventArgs args, string name)
+    {
+        foreach (var file in args.Files)
+        {
+            Console.WriteLine($"File: {file.Name} / {file.Size} bytes");
+        }
+        Console.WriteLine($"{name} changed");
+    }
+
+    private async Task OnProgress(UploadProgressArgs args, string name)
+    {
+        //Console.WriteLine($"{args.Progress}% '{name}' / {args.Loaded} of {args.Total} bytes.");
+        if (args.Progress == 100)
+        {
+            foreach (var file in args.Files)
+            {
+                Console.WriteLine($"Uploaded: {file.Name} / {file.Size} bytes");
+            }
+
+            Console.WriteLine("upload complete");
+        }
+    }
+
+    private void UploadDocument(MouseEventArgs args)
+    {
+        upload.Upload();
+    }
+
+    private string uploadResult {get;set;}
+    private async Task OnComplete(UploadCompleteEventArgs args)
+    {
+        //Console.WriteLine(args.RawResponse);
+        //ServiceResponse? response = JsonConvert.DeserializeObject<ServiceResponse>(args.RawResponse);
+//
+        //if (response is not null && response.message.Contains("success"))
+        //{
+        //    uploadResult = "File uploaded successfully.";
+        //}
+        //else
+        //{
+        //    uploadResult = $"Error uploading file: {response?.message ?? "error"}";
+        //}
+
+        await GetDataAgainAsync();
+
+        //var parameters = new ModalParameters();
+        //parameters.Add(nameof(PopupDialog.Message), response!.message);
+        //Modal.Show<PopupDialog>("Info", parameters);
+    }
+
+    private void OnError(UploadErrorEventArgs args)
+    {
+        uploadResult = $"Error: {args.Message}";
+    }
+}

@@ -8,6 +8,21 @@ function bs()
     console.log('here bitches!!!')
 }
 
+// only allow numbers to be entered
+
+const ValidateNumber = (event) => {
+    var theEvent = event || window.event;
+    var key = theEvent.keyCode || theEvent.which;
+    key = String.fromCharCode(key);
+    var regex = /^[\d\.\b\t-]+$/;
+    if (!regex.test(key))
+    {
+        theEvent.preventDefault ? theEvent.preventDefault() : (theEvent.returnValue = false);
+
+    }
+
+}
+
 const showHidePasswordField = (fieldId) => {
 
     $(`#${fieldId} a`).on('click', function(event) {

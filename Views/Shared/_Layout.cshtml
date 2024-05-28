@@ -10,9 +10,13 @@
 </head> *@
 
 
+@{
+    const string APP_THEME = "light"; // "light" for light theme and "dark" for dark theme
+}
+
 
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="@APP_THEME">
     <head>
         <meta charset="utf-8" />
 
@@ -37,17 +41,19 @@
 
     @* fontawesome 6 *@
 
-        <link rel="stylesheet" href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-        <link rel="shortcut icon" href="~/favicon_fwc.ico" />
+        @* <link rel="shortcut icon" href="~/favicon_fwc.ico" /> *@
 
         <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        @* <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> *@
 
-        <style>
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+        @* <style>
             .nav-link:hover:not(:last-child) {background-color: lightgray;}
-        </style>
+        </style> *@
     </head>
     <body>
         <header id="fwc-header">
@@ -67,7 +73,7 @@
             </div>
             <br />
 
-            <nav class="navbar navbar-expand-lg navbar-dark">
+            <nav class="navbar navbar-expand-lg navbar-@APP_THEME">
                 <div class="container-fluid">
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
@@ -76,9 +82,9 @@
                         <div class="navbar-nav">
                         @Html.ActionLink("Passwords", "Index", "Home", null, new { @class = "nav-link" })
 
-                        @Html.ActionLink("Settings", "Settings", "Home", null, new { @class = "nav-link text-light" })
+                        @Html.ActionLink("Settings", "Settings", "Home", null, new { @class = "nav-link" })
 
-                        @Html.ActionLink("Account", "EditProfile", "Account", null, new { @class = "nav-link text-light" })
+                        @Html.ActionLink("Account", "EditProfile", "Account", null, new { @class = "nav-link" })
 
                             <partial name="_LoginPartial" />
                         </div>
@@ -117,7 +123,7 @@
 
                     <div class="version-foot-style">
 
-                        &copy; 2023 - Leo's Password Manager
+                        &copy; @DateTime.Now.Year - Leo's Password Manager
 
                         <br>
 
@@ -153,6 +159,13 @@
         <script type="text/javascript">
 
             $(document).ready(function () {
+
+                $('.shadow_on_hover').hover(function(){
+                    $(this).css('box-shadow', '0px 0px 10px rgba(0,0,0,0.5)')
+                },
+                function(){
+                    $(this).css('box-shadow', 'none') // reset shadow
+                })
 
                 //$(window).on('resize', () => {
 

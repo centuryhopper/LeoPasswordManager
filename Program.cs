@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Repositories;
+using LeoPasswordManager.Models;
 
 
 // TODO: use action filters to annotate controllers
@@ -58,9 +59,8 @@ builder.Services.AddDbContext<PasswordAccountContext>();
 builder.Services.AddSingleton<EncryptionContext>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<
-    IPasswordManagerAccountRepository<PasswordmanagerAccount>,
-    PasswordManagerAccountRepository
->();
+    IPasswordManagerAccountRepository<PasswordAccountModel>,
+    PasswordManagerAccountRepository>();
 
 if (!builder.Environment.IsDevelopment())
 {
