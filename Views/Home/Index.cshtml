@@ -51,9 +51,6 @@
 </style>
 
 
-@* @(await Html.RenderComponentAsync<TestGrid>(RenderMode.Server, new { UserId = ViewBag.userId })) *@
-
-
 @await Component.InvokeAsync("PasswordTablePaginationVC", new { paginationParameters = paginationParameters })
 
 <div class="m-3"><strong>Total number of records: @ViewBag.TotalRecordsCount</strong></div>
@@ -170,7 +167,9 @@
     <div class="col-1"></div>
 </div>
 
-@* TODO: razor component of uploading and exporting the passwords can be added right here *@
+@* razor component of uploading and exporting the passwords can be added right here *@
+
+@(await Html.RenderComponentAsync<FileImportExport>(RenderMode.Server, new { UserId = ViewBag.userId }))
 
 
 @section Scripts {

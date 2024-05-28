@@ -27,12 +27,14 @@ public class HomeController : Controller
 
         var result = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
 
-        if (result is null)
+        if (result.UploadEnum == UploadEnum.FAIL)
         {
             return BadRequest("failed to upload csv");
         }
 
         return Ok("upload csv success!");
+        // return RedirectToAction(nameof(Index), new {pg=1});
+
     }
 
     

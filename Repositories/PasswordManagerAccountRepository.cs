@@ -98,6 +98,10 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
+
+            // set to null to allow files with only title, usernam, and password headers to be uploaded
+            HeaderValidated = null,
+            MissingFieldFound = null,
         };
 
         using var streamReader = new StreamReader(file.OpenReadStream());
@@ -118,6 +122,8 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
                     Title = record.Title,
                     Username = record.Username,
                     Password = record.Password,
+                    CreatedAt = DateTime.Now.ToString("yyyy-MM-dd"),
+                    LastUpdatedAt = DateTime.Now.ToString("yyyy-MM-dd"),
                 });
             }
         }
@@ -125,7 +131,7 @@ public class PasswordManagerAccountRepository : IPasswordManagerAccountRepositor
         {
             return new UploadStatus
             {
-                Message = "Failed to upload csv",
+                Message = ex.Message,
                 UploadEnum = UploadEnum.FAIL
             };
         }
