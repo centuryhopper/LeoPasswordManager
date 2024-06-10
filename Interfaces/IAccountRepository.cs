@@ -5,6 +5,9 @@ namespace LeoPasswordManager.Interfaces;
 
 public interface IAccountRepository
 {
+    Task<ServiceResponse> RemoveUserToken(AccountProviders accountProviders, string token, string userId);
+    Task SendResetPasswordLink(ResetPasswordLinkVM model, string UserId);
+    void SendEmail(string recipientEmail, string subject, string body);
     Task<UserModel?> GetUserByEmailAsync(string email);
     Task<AuthStatus> ChangePasswordAsync(string userId, string newPassword);
     Task<AuthStatus>  CheckPassword(string email, string password);

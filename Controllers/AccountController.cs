@@ -69,6 +69,14 @@ public class AccountController : Controller
     {
         var verifyToken = await accountRepository.VerifyTokenAsync(AccountProviders.EMAIL_CONFIRMATION, token, userId);
 
+        if (verifyToken)
+        {
+            // remove the reset password pair for this user
+            await accountRepository.RemoveUserToken(AccountProviders.EMAIL_CONFIRMATION, token, userId);
+        }
+
+        ViewBag.Success = verifyToken;
+
         return View();
     }
 
@@ -99,7 +107,6 @@ public class AccountController : Controller
         }
 
         var result = await accountRepository.LoginAsync(vm);
-
 
         if (result.Successful)
         {
@@ -165,6 +172,104 @@ public class AccountController : Controller
         ViewBag.UserId = User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)!.Value;
         return View();
     }
+
+    [AllowAnonymous]
+    public IActionResult SendResetPasswordLink()
+    {
+        return View();
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    public async Task<IActionResult> SendResetPasswordLink(ResetPasswordLinkVM vm)
+    {
+        var user = await accountRepository.GetUserByEmailAsync(vm.Email);
+
+        if (user is not null)
+        {
+            await accountRepository.SendResetPasswordLink(vm, user.Id);
+        }
+
+
+        TempData[TempDataKeys.ALERT_SUCCESS] = "If you have an account with us, then you will have a reset password link sent to you";
+
+        return View();
+    }
+
+
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(string token, string userId)
+    {
+        // If password reset token or email is null, most likely the
+        // user tried to tamper the password reset link
+        if (token == null || userId == null)
+        {
+            ModelState.AddModelError("", "Invalid password reset token");
+            return View();
+        }
+
+        var user = await accountRepository.GetUserByIdAsync(userId);
+
+        if (user is null)
+        {
+            ModelState.AddModelError("", "Invalid user id");
+            return View();
+        }
+
+        var verifyToken = await accountRepository.VerifyTokenAsync(AccountProviders.RESET_PASSWORD, token, userId);
+
+        if (!verifyToken)
+        {
+            ModelState.AddModelError("", "Your password could not be reset. Please try again later.");
+            return View();
+        }
+
+        // remove the reset password pair for this user
+        await accountRepository.RemoveUserToken(AccountProviders.RESET_PASSWORD, token, userId);
+
+        return View(new ResetPasswordViewModel {
+            Email = user.Email,
+            Token = token,
+        });
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            // Find the user by email
+            var user = await accountRepository.GetUserByEmailAsync(model.Email);
+
+            if (user != null)
+            {
+                // reset the user password
+                var result = await accountRepository.ChangePasswordAsync(user.Id, model.Password);
+
+                if (result.Successful)
+                {
+                    return View("ResetPasswordConfirmation");
+                }
+
+                // Display validation errors. For example, password reset token already
+                // used to change the password or password complexity rules not met
+
+                ModelState.AddModelError("", result.Error!);
+
+                return View(model);
+            }
+
+            // To avoid account enumeration and brute force attacks, don't
+            // reveal that the user does not exist
+            return View("ResetPasswordConfirmation");
+        }
+        // Display validation errors if model state is not valid
+        return View(model);
+    }
+
 
     public async Task<IActionResult> LogOut()
     {

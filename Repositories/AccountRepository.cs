@@ -97,7 +97,8 @@ public class AccountRepository : IAccountRepository
 
         if (userModel is null)
         {
-            return new AuthStatus {
+            return new AuthStatus
+            {
                 Successful = false,
                 Error = "Couldn't find you in the system."
             };
@@ -105,7 +106,8 @@ public class AccountRepository : IAccountRepository
 
         var hashedPW = encryptionContext.OneWayHash($"{password}{userModel.Salt}");
 
-        return new AuthStatus {
+        return new AuthStatus
+        {
             Successful = hashedPW == userModel.PasswordHash,
             Error = hashedPW == userModel.PasswordHash ? "" : "Current password entered is incorrect",
         };
@@ -167,14 +169,16 @@ public class AccountRepository : IAccountRepository
         }
         catch (System.Exception ex)
         {
-            return new AuthStatus {
+            return new AuthStatus
+            {
                 Successful = false,
                 Error = ex.Message,
             };
         }
 
-        return new AuthStatus {
-                Successful = true,
+        return new AuthStatus
+        {
+            Successful = true,
         };
 
     }
@@ -213,28 +217,7 @@ public class AccountRepository : IAccountRepository
                     Datelastlogout = null,
                 }
             );
-
-            // create and send email confirmation link
-            var token = TokenGenerator.GenerateToken(32);
-
-            var TokenPK = Guid.NewGuid().ToString();
-            var LoginProvider = AccountProviders.EMAIL_CONFIRMATION.ToString();
-            // make sure there are no spaces to preserve consistent token identity when passing thru urls
-            var ProviderKey = token.Replace(" ", "+");
-            var UserIdFK = UserId;
-
-            await passwordAccountContext.Usertokens.AddAsync(new Usertoken
-            {
-                Id = TokenPK,
-                Loginprovider = LoginProvider,
-                Providerkey = ProviderKey,
-                Userid = UserIdFK,
-            });
-
-            var emailLink = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
-
-            // store token in user token table
-            SendConfirmationEmail(model.Email, $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}/Account/ConfirmEmail/?token={token}&userId={UserIdFK}");
+            await SendConfirmationEmailLink(model, UserId);
 
             // assign role of "User" to this user
             var role = await passwordAccountContext.Roles.FirstOrDefaultAsync(r => r.Name == "User");
@@ -257,6 +240,63 @@ public class AccountRepository : IAccountRepository
         {
             return new AuthStatus { Successful = false, Error = e.Message };
         }
+    }
+
+    private async Task SendConfirmationEmailLink(RegisterModel model, string UserId)
+    {
+        // create and send email confirmation link
+        var token = TokenGenerator.GenerateToken(32);
+
+        var TokenPK = Guid.NewGuid().ToString();
+        var LoginProvider = AccountProviders.EMAIL_CONFIRMATION.ToString();
+        // make sure there are no spaces to preserve consistent token identity when passing thru urls
+        var ProviderKey = token.Replace(" ", "+");
+        var UserIdFK = UserId;
+
+        await passwordAccountContext.Usertokens.AddAsync(new Usertoken
+        {
+            Id = TokenPK,
+            Loginprovider = LoginProvider,
+            Providerkey = ProviderKey,
+            Userid = UserIdFK,
+        });
+
+        var emailLink = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
+
+        var confirmationLink = $"{emailLink}/Account/ConfirmEmail/?token={token}&userId={UserIdFK}";
+
+        // store token in user token table
+        SendEmail(model.Email, subject: "Password Manager email confirmation", body: $"Please confirm your email by clicking the following link: {confirmationLink}");
+
+        await passwordAccountContext.SaveChangesAsync();
+    }
+
+    public async Task SendResetPasswordLink(ResetPasswordLinkVM model, string UserId)
+    {
+        // create and send email confirmation link
+        var token = TokenGenerator.GenerateToken(32);
+
+        var TokenPK = Guid.NewGuid().ToString();
+        var LoginProvider = AccountProviders.RESET_PASSWORD.ToString();
+        // make sure there are no spaces to preserve consistent token identity when passing thru urls
+        var ProviderKey = token.Replace(" ", "+");
+        var UserIdFK = UserId;
+
+        await passwordAccountContext.Usertokens.AddAsync(new Usertoken
+        {
+            Id = TokenPK,
+            Loginprovider = LoginProvider,
+            Providerkey = ProviderKey,
+            Userid = UserIdFK,
+        });
+
+        var emailLink = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
+
+        var confirmationLink = $"{emailLink}/Account/ResetPassword/?token={token}&userId={UserId}";
+
+        SendEmail(model.Email, "Please reset your password.", $"Here is the reset password link: {confirmationLink}");
+
+        await passwordAccountContext.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<string>> UpdateUserAsync(EditAccountModel model)
@@ -304,7 +344,7 @@ public class AccountRepository : IAccountRepository
         var loginProvider = accountProviders.ToString();
         try
         {
-            var result = await passwordAccountContext.Usertokens.FirstAsync(ut => ut.Userid == userId && ut.Loginprovider == loginProvider);
+            var result = await passwordAccountContext.Usertokens.FirstOrDefaultAsync(ut => ut.Userid == userId && ut.Loginprovider == loginProvider);
 
             // we know the any spaces of the token stored in the db has pluses replaced them, so we do this with our current token as well
             token = token.Replace(" ", "+");
@@ -316,12 +356,21 @@ public class AccountRepository : IAccountRepository
                 return false;
             }
 
-            // mark email as confirmed
-            var updatedUserEmailConfirmed = await passwordAccountContext.PasswordmanagerUsers.FirstAsync(u => u.Id == userId);
-            // updatedUserEmailConfirmed.Emailconfirmed.Set(0, true);
-            updatedUserEmailConfirmed.Emailconfirmed = new BitArray(new bool[] { true });
+            switch (accountProviders)
+            {
+                case AccountProviders.EMAIL_CONFIRMATION:
+                    // mark email as confirmed
+                    var updatedUserEmailConfirmed = await passwordAccountContext.PasswordmanagerUsers.FirstAsync(u => u.Id == userId);
+                    // updatedUserEmailConfirmed.Emailconfirmed.Set(0, true);
+                    updatedUserEmailConfirmed.Emailconfirmed = new BitArray(new bool[] { true });
 
-            await passwordAccountContext.SaveChangesAsync();
+                    await passwordAccountContext.SaveChangesAsync();
+                    break;
+                case AccountProviders.RESET_PASSWORD:
+                    break;
+                default:
+                    break;
+            }
 
             return true;
         }
@@ -332,23 +381,39 @@ public class AccountRepository : IAccountRepository
         }
     }
 
-    private void SendConfirmationEmail(string recipientEmail, string confirmationLink)
+    public async Task<ServiceResponse> RemoveUserToken(AccountProviders accountProviders, string token, string userId)
     {
-        var smtpInfo =  env.IsDevelopment() ? configuration.GetConnectionString("smtp_client") : Environment.GetEnvironmentVariable("smtp_client");
+        var loginProvider = accountProviders.ToString();
+        try
+        {
+            var result = await passwordAccountContext.Usertokens.FirstOrDefaultAsync(ut => ut.Userid == userId && ut.Loginprovider == loginProvider);
+
+            passwordAccountContext.Usertokens.Remove(result);
+            await passwordAccountContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            return new ServiceResponse(false, e.Message);
+        }
+
+        return new ServiceResponse(true, "success");
+    }
+
+    public void SendEmail(string recipientEmail, string subject, string body)
+    {
+        var smtpInfo = env.IsDevelopment() ? configuration.GetConnectionString("smtp_client") : Environment.GetEnvironmentVariable("smtp_client");
 
         // Configure email settings
         string senderEmail = smtpInfo.Split("|")[0];
         string senderPassword = smtpInfo.Split("|")[1];
 
         // string receivers = config.GetConnectionString("smtp_receivers");
-
         Helpers.SendEmail(
-            subject: "Password Manager email confirmation",
-            body: $"Please confirm your email by clicking the following link: {confirmationLink}",
+            subject: subject,
+            body: body,
             senderEmail: senderEmail,
             senderPassword: senderPassword,
             receivers: [recipientEmail]
         );
     }
-
 }

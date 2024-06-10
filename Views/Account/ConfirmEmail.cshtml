@@ -3,6 +3,16 @@
 }
 
 
-<h2 class="text-success text-center mt-3">
-    Your email has been confirmed. Please sign in to get started.
-</h2>
+
+@if (ViewBag.Success)
+{
+    <h2 class="text-success text-center mt-3">
+        Your email has been confirmed. Please sign in to get started.
+    </h2>
+}
+else
+{
+    <h2 class="text-success text-center mt-3">
+        Your email could not be confirmed. Please try again later.
+    </h2>
+}

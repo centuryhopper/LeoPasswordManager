@@ -3,10 +3,17 @@
     ViewData["Title"] = "Settings";
 }
 
-@* @(await Html.RenderComponentAsync<Settings>(RenderMode.Server)) *@
 
-<div class="m-5">
-    <button class="btn btn-danger" id="delete_account">Delete Account</button>
+<div class="row">
+    <div class="col">
+        <button class="btn btn-danger m-2" id="delete_account">Delete Account</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <a class="btn btn-danger m-2" asp-controller="Account" asp-action="ChangePassword">Change Password</a>
+    </div>
 </div>
 
 

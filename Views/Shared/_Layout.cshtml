@@ -49,8 +49,7 @@
 
         @* <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> *@
 
-        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         @* <style>
             .nav-link:hover:not(:last-child) {background-color: lightgray;}
         </style> *@
@@ -212,7 +211,6 @@
                 msg = '@(TempData[TempDataKeys.ALERT_WARNING])'
 
                 if (msg)
-
                 {
 
                     openWarningModal(msg)
@@ -224,19 +222,14 @@
                 msg = '@(TempData[TempDataKeys.ALERT_WARNING_PROMPT])'
 
                 if (msg)
-
                 {
 
                     openWarningPromptModal(msg)
-
                 }
-
-
 
                 msg = '@(TempData[TempDataKeys.ALERT_ERROR])'
 
                 if (msg)
-
                 {
 
                     console.log(msg);

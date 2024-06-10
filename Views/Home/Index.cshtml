@@ -37,8 +37,8 @@
     //Constants.CREATED_AT,
     //Constants.LAST_UPDATED_AT,
     Constants.TITLE
-    ,Constants.USERNAME
-    ,Constants.PASSWORD
+,Constants.USERNAME
+,Constants.PASSWORD
     ];
 }
 
@@ -53,7 +53,13 @@
 
 @await Component.InvokeAsync("PasswordTablePaginationVC", new { paginationParameters = paginationParameters })
 
-<div class="m-3"><strong>Total number of records: @ViewBag.TotalRecordsCount</strong></div>
+<div class="m-3">
+    <strong>Total number of records: @ViewBag.TotalRecordsCount</strong>
+</div>
+
+<div class="m-3">
+    <button class="btn btn-primary" id="toggle_passwords"></button>
+</div>
 
 <table class="table-container table table-striped table-bordered table-hover" id="@DB_PASSWORD_TABLE_ID"
     style="width: 100%;">
@@ -128,7 +134,8 @@
                     </div>
                 </td>
                 <td class="@Constants.PASSWORD">
-                    <span>@passwordDetail.Password</span>
+                    <span class="visible_password">@passwordDetail.Password</span>
+                    <span class="obscure_password">@(new String('*', passwordDetail.Password.Length))</span>
                     <input id="@(edit_password+i)" style="display: none;" placeholder="Enter Password">
                     <div style="width:150px;">
                         <p style="display:none;">This is used to increase width of column</p>
@@ -220,8 +227,54 @@
 
             // all js code above is for initializing
 
+            // hide passwords by default
+            $('.obscure_password').each(function ()
+            {
+                $(this).show()
+            });
 
-            // helper grid form
+            $('.visible_password').each(function ()
+            {
+                $(this).hide()
+            });
+
+            $('#toggle_passwords').text('Show Passwords')
+
+            $('#toggle_passwords').click(function ()
+            {
+                // if passwords are showing then hide them
+                // otherwise show them
+                if ($('.obscure_password').first().is(':visible'))
+                {
+                    $('.obscure_password').each(function ()
+                    {
+                        $(this).hide()
+                    });
+
+                    $('.visible_password').each(function ()
+                    {
+                        $(this).show()
+                    });
+
+                    $('#toggle_passwords').text('Hide Passwords')
+                }
+                else
+                {
+                    $('.obscure_password').each(function ()
+                    {
+                        $(this).show()
+                    });
+
+                    $('.visible_password').each(function ()
+                    {
+                        $(this).hide()
+                    });
+
+                    $('#toggle_passwords').text('Show Passwords')
+                }
+            });
+
+            // helper grid form            
             $('#@HELPER_PASSWORD_FORM_ID').submit(function (event)
             {
 
@@ -297,10 +350,10 @@
                     success: function (result)
                     {
                         // refresh page and clear helper table
-                        swal("password details added!", "", "success")
+                        swal.fire("password details added!", "", "success")
                             .then((value) =>
                             {
-                                //swal(`The returned value is: ${value}`);
+                                //swal.fire(`The returned value is: ${value}`);
                                 location.reload()
                             });
                     },
@@ -331,7 +384,7 @@
                 if (!$('#@HELPER_PASSWORD_ADD_ROW_FIELD_ID').val())
                 {
                     //alert('Please enter the number of rows you want to add')
-                    swal("Please enter the number of rows you want to add", "", "info")
+                    swal.fire("Please enter the number of rows you want to add", "", "info")
                     return
                 }
 
@@ -343,7 +396,7 @@
 
                 if (numRows > addRowLimit)
                 {
-                    swal(`you cannot enter more than ${addRowLimit} rows`, "", "error")
+                    swal.fire(`you cannot enter more than ${addRowLimit} rows`, "", "error")
                     return
                 }
 
@@ -369,29 +422,29 @@
                     const formattedDate = getTodayInYearMonthDayFormat()
 
                     var newRow = `
-                            <tr>
-                                <td>
-                                    <span class="rowNumber">${maxRowNum}</span>
-                                </td>
-                                <td>
-                                    <span style="width:50px" type="text" class="@Constants.CREATED_AT">${formattedDate}</span>
-                                </td>
-                                <td>
-                                    <span style="width:50px" type="text"  class="@Constants.LAST_UPDATED_AT">${formattedDate}</span>
-                                </td>
-                                <td>
-                                    <input style="width:50px" type="text" class="@Constants.TITLE">
-                                </td>
-                                <td>
-                                    <input style="width:50px" type="text" class="@Constants.USERNAME">
-                                </td>
-                                <td>
-                                    <input style="width:50px" type="text" class="@Constants.PASSWORD">
-                                </td>
-                                <td>
-                                    <button style="width:75px" class="deleteButton btn btn-danger">Delete</button></td>
-                                </td>
-                            </tr>`;
+                                <tr>
+                                    <td>
+                                        <span class="rowNumber">${maxRowNum}</span>
+                                    </td>
+                                    <td>
+                                        <span style="width:50px" type="text" class="@Constants.CREATED_AT">${formattedDate}</span>
+                                    </td>
+                                    <td>
+                                        <span style="width:50px" type="text"  class="@Constants.LAST_UPDATED_AT">${formattedDate}</span>
+                                    </td>
+                                    <td>
+                                        <input style="width:50px" type="text" class="@Constants.TITLE">
+                                    </td>
+                                    <td>
+                                        <input style="width:50px" type="text" class="@Constants.USERNAME">
+                                    </td>
+                                    <td>
+                                        <input style="width:50px" type="text" class="@Constants.PASSWORD">
+                                    </td>
+                                    <td>
+                                        <button style="width:75px" class="deleteButton btn btn-danger">Delete</button></td>
+                                    </td>
+                                </tr>`;
 
                     $('#@HELPER_PASSWORD_FORM_ID').find('table tbody').append(newRow);
 
@@ -508,11 +561,11 @@
                 const formattedDate = getTodayInYearMonthDayFormat()
 
                 var passwordAccountModel = {
-                    CreatedAt: $('#@edit_created_at' + rowIdx-1).text(),
+                    CreatedAt: $('#@edit_created_at' + rowIdx - 1).text(),
                     LastUpdatedAt: formattedDate,
-                    Title: $('#@edit_title' + (rowIdx-1)).val(),
-                    Username: $('#@edit_username' + (rowIdx-1)).val(),
-                    Password: $('#@edit_password' + (rowIdx-1)).val(),
+                    Title: $('#@edit_title' + (rowIdx - 1)).val(),
+                    Username: $('#@edit_username' + (rowIdx - 1)).val(),
+                    Password: $('#@edit_password' + (rowIdx - 1)).val(),
                     UserId: '@userId',
                     Id: row.find("td:last-child").text().trim()
                 }
@@ -556,71 +609,73 @@
                     success: function (res)
                     {
                         //console.log(res);
-                        swal("Successfully updated the password detail!", "", "success")
+                        swal.fire("Successfully updated the password detail!", "", "success")
                             .then((value) =>
                             {
-                                //swal(`The returned value is: ${value}`);
+                                //swal.fire(`The returned value is: ${value}`);
                                 //location.reload()
                             });
-                   },
-                   error: function (req, status, error)
+                    },
+                    error: function (req, status, error)
                     {
-                        swal("Failed to update the coral detail :/", "", "error")
+                        swal.fire("Failed to update the coral detail :/", "", "error")
                             .then((value) =>
                             {
-                                //swal(`The returned value is: ${value}`);
+                                //swal.fire(`The returned value is: ${value}`);
                                 //location.reload()
                             });
                         console.log(req);
                         console.log(status);
                         console.log(error);
                     }
-               });
+                });
             })
+
+            $("body").on("click", '#@DB_PASSWORD_TABLE_ID .Delete', function ()
+            {
+                let row = $(this).closest("tr")
+
+                // reorganize action buttons
+                // row.find('.Update').css('color', '#ccc').prop('disabled', true);
+                row.find('.CancelDelete').show()
+                row.find('.ConfirmDelete').show()
+                //row.find('.Edit').hide()
+                $(this).hide()
+            });
+
+
+            $("body").on("click", '#@DB_PASSWORD_TABLE_ID .ConfirmDelete', function ()
+            {
+                let row = $(this).closest("tr")
+
+                // get the hidden row
+                let passwordDetailId = row.find("td:last").text().trim()
+
+                // make ajax call to delete that row in the server so we can re-render the page
+
+                $.ajax({
+                    url: "@Url.Action("DeletepasswordDetail", "Home")",
+                    type: 'POST',
+                    data: {
+                        passwordDetailId
+                    },
+                    datatype: "json",
+                    success: function (res)
+                    {
+                        //console.log(res);
+                        location.reload()
+                    },
+                    error: function (req, status, error)
+                    {
+                        console.log(req);
+                        console.log(status);
+                        console.log(error);
+                    }
+                })
+            });
+
         });
 
 
-        $("body").on("click", '#@DB_PASSWORD_TABLE_ID .Delete', function ()
-        {
-            let row = $(this).closest("tr")
-
-            // reorganize action buttons
-            // row.find('.Update').css('color', '#ccc').prop('disabled', true);
-            row.find('.CancelDelete').show()
-            row.find('.ConfirmDelete').show()
-            //row.find('.Edit').hide()
-            $(this).hide()
-        });
-
-
-        $("body").on("click", '#@DB_PASSWORD_TABLE_ID .ConfirmDelete', function ()
-        {
-            let row = $(this).closest("tr")
-
-            // get the hidden row
-            let passwordDetailId = row.find("td:last").text().trim()
-
-            // make ajax call to delete that row in the server so we can re-render the page
-
-            $.ajax({
-                url: "@Url.Action("DeletepasswordDetail", "Home")",
-                type: 'POST',
-                data: {
-                    passwordDetailId
-                },
-                datatype: "json",
-                success: function (res)
-                {
-                    //console.log(res);
-                    location.reload()
-                },
-                error: function (req, status, error)
-                {
-                    console.log(req);
-                    console.log(status);
-                    console.log(error);
-                }
-            })
-        });
     </script>
 }
