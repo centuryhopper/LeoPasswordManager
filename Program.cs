@@ -6,7 +6,8 @@ using LeoPasswordManager.Repositories;
 using LeoPasswordManager.Models;
 
 
-// TODO: use action filters to annotate controllers
+
+// TODO: Adapt the app to use my ums
 
 // old users will never get deleted. The userrole pairs they had will for the sake of simplicity
 // dotnet ef dbcontext scaffold "" Npgsql.EntityFrameworkCore.PostgreSQL -o Temp -t userroles -t passwordmanager_accounts -t passwordmanager_users -t roles -t usertokens
