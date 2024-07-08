@@ -7,24 +7,31 @@ using LeoPasswordManager.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LeoPasswordManager.Utilities;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Identity;
 
 namespace LeoPasswordManager.Controllers;
 
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> logger;
-    private readonly IPasswordManagerAccountRepository<PasswordAccountModel> passwordManagerAccountRepository;
+    private readonly IPasswordManagerDbRepository<PasswordAccountModel> passwordManagerAccountRepository;
+    private readonly UserManager<ApplicationUser> userManager;
 
-    public HomeController(ILogger<HomeController> logger, IPasswordManagerAccountRepository<PasswordAccountModel> passwordManagerAccountRepository)
+    public HomeController(ILogger<HomeController> logger, IPasswordManagerDbRepository<PasswordAccountModel> passwordManagerAccountRepository, UserManager<ApplicationUser> userManager)
     {
         this.logger = logger;
         this.passwordManagerAccountRepository = passwordManagerAccountRepository;
+        this.userManager = userManager;
+    }
+
+    public IActionResult Welcome()
+    {
+        return View();
     }
 
     [Authorize, HttpPost]
-    public async Task<IActionResult> UploadCSV(IFormFile file, string userId)
+    public async Task<IActionResult> UploadCSV(IFormFile file, int userId)
     {
-
         var result = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
 
         if (result.UploadEnum == UploadEnum.FAIL)
@@ -37,7 +44,7 @@ public class HomeController : Controller
 
     }
 
-    
+
 
     [HttpPost]
     public async Task<IActionResult> UpdatePasswordDetail(PasswordAccountModel passwordAccountModel)
@@ -58,8 +65,10 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> DeletePasswordDetail(string passwordDetailId)
     {
-        var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!; 
-        var accountModel = await passwordManagerAccountRepository.GetAccountModelAsync(passwordDetailId, userId);
+        var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        // get user id from finding user via ums userid
+        var user = await passwordManagerAccountRepository.GetPasswordManagerUser(umsUserId: umsUserId);
+        var accountModel = await passwordManagerAccountRepository.GetAccountModelAsync(passwordDetailId, user!.Id);
         var deleteDetail = await passwordManagerAccountRepository.DeleteAsync(accountModel!);
 
         return RedirectToAction(nameof(Index));
@@ -85,7 +94,7 @@ public class HomeController : Controller
             // logger.LogWarning($"{acc.Title}");
             // logger.LogWarning($"{acc.Username}");
             // logger.LogWarning($"{acc.Password}");
-            
+
             await passwordManagerAccountRepository.CreateAsync(acc);
         }
 
@@ -93,16 +102,22 @@ public class HomeController : Controller
     }
 
     [Authorize]
-    public async Task<IActionResult> Index(int pg=1)
+    public async Task<IActionResult> Index(int pg = 1)
     {
-        var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        ViewBag.userId = userId;
+        // var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var umsUser = await userManager.GetUserAsync(User);
+        
+
+        // get user id from finding user via ums userid
+        var user = (await passwordManagerAccountRepository.GetPasswordManagerUser(umsUserId: umsUser!.Id)) ?? await passwordManagerAccountRepository.CreatePasswordManagerUser(umsUser);
+
+        ViewBag.userId = user!.Id;
 
         const int PAGE_SIZE = 5;
         if (pg < 1) pg = 1;
-        var passwordAccounts  = await passwordManagerAccountRepository.GetAllAccountsAsync(userId);
+        var passwordAccounts = await passwordManagerAccountRepository.GetAllAccountsAsync(user!.Id);
         var pager = new Pager(totalItems: passwordAccounts.Count(), pageNumber: pg, pageSize: PAGE_SIZE);
-        int recordsToSkip = (pg-1) * PAGE_SIZE;
+        int recordsToSkip = (pg - 1) * PAGE_SIZE;
         var pagedDetails = passwordAccounts.Skip(recordsToSkip).Take(pager.PageSize);
 
         ViewBag.PagedDetails = pagedDetails;

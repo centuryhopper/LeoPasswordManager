@@ -1,4 +1,4 @@
-@inject NavigationManager NavManager
+@* @inject NavigationManager NavManager
 @inject IAccountRepository accountRepository
 @inject IHttpContextAccessor httpContextAccessor
 
@@ -10,19 +10,21 @@
                 Log in
             </h4>
             <div class="card-body">
-                <DataAnnotationsValidator/>
+                <DataAnnotationsValidator />
                 <p class="form-group">
                     <label class="m-2">Email</label>
                     <RadzenTextBox @bind-Value="@Model.Email" class="form-control" />
-                    <ValidationMessage For="@(() => Model.Email)"/>
+                    <ValidationMessage For="@(() => Model.Email)" />
                 </p>
                 <p class="form-group">
                     <label class="m-2">Password</label>
-                    <RadzenPassword class="form-control" @bind-Value="@Model.Password" Visible="@(PasswordVisible == false)" />
+                    <RadzenPassword class="form-control" @bind-Value="@Model.Password"
+                        Visible="@(PasswordVisible == false)" />
                     <RadzenTextBox class="form-control" @bind-Value="@Model.Password" Visible="@PasswordVisible" />
                     <br>
-                    Show password <RadzenCheckBox @bind-Value="@PasswordVisible" />
-                    <ValidationMessage For="@(() => Model.Password)"/>
+                    Show password
+                    <RadzenCheckBox @bind-Value="@PasswordVisible" />
+                    <ValidationMessage For="@(() => Model.Password)" />
                 </p>
             </div>
             <div class="m-3">
@@ -45,32 +47,26 @@
 
 @if (ShouldConfirmEmail)
 {
-    <ModalDialog Title="Email Not Confirmed"
-                Text="Please confirm your email before proceeding."
-                OnClose="@OnShouldConfirmEmailClose"
-                DialogType="ModalDialog.ModalDialogType.Ok"/>
+    <ModalDialog Title="Email Not Confirmed" Text="Please confirm your email before proceeding."
+    OnClose="@OnShouldConfirmEmailClose" DialogType="ModalDialog.ModalDialogType.Ok" />
 }
 
 @if (ShouldRegister)
 {
-    <ModalDialog Title="Error Logging In"
-                Text="We couldn't pull up your information."
-                OnClose="OnShouldRegisterClose"
-                DialogType="ModalDialog.ModalDialogType.Ok"/>
+    <ModalDialog Title="Error Logging In" Text="We couldn't pull up your information." OnClose="OnShouldRegisterClose"
+    DialogType="ModalDialog.ModalDialogType.Ok" />
 
 }
 
 @if (InvalidLogin)
 {
-    <ModalDialog Title="Error"
-                Text="Invalid username or password."
-                OnClose="@OnInvalidLogin"
-                DialogType="ModalDialog.ModalDialogType.Ok"/>
+    <ModalDialog Title="Error" Text="Invalid username or password." OnClose="@OnInvalidLogin"
+    DialogType="ModalDialog.ModalDialogType.Ok" />
 }
 
 
 @code {
-    private LoginModel Model = new();
+    private LoginVM Model = new();
     private bool PasswordVisible = false;
     private bool loading = false;
     private bool ShouldRegister = false;
@@ -138,20 +134,22 @@
         if (result.Successful)
         {
             List<Claim> claims = [
-                new(ClaimTypes.NameIdentifier, result.Id),
-                new(ClaimTypes.Email, result.Email),
-                new(ClaimTypes.Role, result.Role),
-            ];
+            new(ClaimTypes.NameIdentifier, result.Id),
+new(ClaimTypes.Email, result.Email),
+new(ClaimTypes.Role, result.Role),
+];
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-            var authProperties = new AuthenticationProperties {
-                IsPersistent = true,
-            };
+            var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                };
 
-            await httpContextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+            await httpContextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new
+            ClaimsPrincipal(claimsIdentity), authProperties);
 
-            NavManager.NavigateTo("/Home/Passwords?userId="+result.Id, forceLoad: true);
+            NavManager.NavigateTo("/Home/Passwords?userId=" + result.Id, forceLoad: true);
         }
         else
         {
@@ -163,4 +161,4 @@
     {
         InvalidLogin = true;
     }
-}
+} *@

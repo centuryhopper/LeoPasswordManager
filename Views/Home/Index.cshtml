@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Home Page";
 
-    string userId = ViewBag.userId;
+    int userId = ViewBag.userId;
 
     IEnumerable<PasswordAccountModel> pagedDetails = ViewBag.PagedDetails;
 
@@ -296,7 +296,7 @@
                         Title: '',
                         Username: '',
                         Password: '',
-                        Id: generateUUID(),
+                        //Id: generateUUID(),
                         UserId: '@userId',
 
                     }

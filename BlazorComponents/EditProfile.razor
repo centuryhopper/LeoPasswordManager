@@ -1,13 +1,13 @@
-@inject IAccountRepository accountRepository
+@* @inject IAccountRepository accountRepository *@
 
-<style>
+@* <style>
     .no-bullets {
         list-style-type: none; /* Removes default bullets */
         padding-left: 0; /* Optional: removes default left padding */
     }
-</style>
+</style> *@
 
-<div class="container-fluid">
+@* <div class="container-fluid">
     <EditForm Model="@Model" OnValidSubmit="HandleEditProfile" OnInvalidSubmit="ShowErrors">
         <div class="card">
             <h4 class="text-center card-header">
@@ -80,7 +80,7 @@
         </div>
     </EditForm>
 
-    @* @if (EditMessages is not null && EditMessages.Any())
+    @if (EditMessages is not null && EditMessages.Any())
     {
         <ul>
             @foreach (var message in EditMessages)
@@ -88,11 +88,11 @@
                 <li class="display-6 no-bullets">@message</li>
             }
         </ul>
-    } *@
-</div>
+    }
+</div> *@
 
 
-@code {
+@* @code {
 
     private EditAccountModel Model = new();
     private bool OldPasswordVisible, NewPasswordVisible;
@@ -151,4 +151,4 @@
         //await jsRuntime.InvokeVoidAsync("alert", "An error occurred");
     }
 
-}
+} *@

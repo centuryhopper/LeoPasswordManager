@@ -4,13 +4,15 @@ using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Repositories;
 using LeoPasswordManager.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 
 
 // TODO: Adapt the app to use my ums
 
 // old users will never get deleted. The userrole pairs they had will for the sake of simplicity
-// dotnet ef dbcontext scaffold "" Npgsql.EntityFrameworkCore.PostgreSQL -o Temp -t userroles -t passwordmanager_accounts -t passwordmanager_users -t roles -t usertokens
+// dotnet ef dbcontext scaffold "Server=ep-shy-boat-a5z9pcbn.us-east-2.aws.neon.tech;Database=password_manager_db;User Id=neondb_owner;Password=NSFWkL9Zwb6f;Port=5432" Npgsql.EntityFrameworkCore.PostgreSQL -o Contexts
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +49,7 @@ builder.Services.Configure<CookieAuthenticationOptions>(config =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ADMIN", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("USER", policy => policy.RequireRole("User"));
+    // options.AddPolicy("USER", policy => policy.RequireRole("User"));
 });
 
 builder.Services.AddServerSideBlazor();
@@ -55,13 +57,41 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddDbContext<PasswordAccountContext>();
+builder.Services.AddDbContext<UserManagementContext>(options =>
+    options.UseNpgsql(
+        builder.Environment.IsDevelopment()
+                ?
+                    builder.Configuration.GetConnectionString("UserManagementDB")
+                :
+                    Environment.GetEnvironmentVariable("UserManagementDB"))
+    );
+
+builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+    options.UseNpgsql(
+        builder.Environment.IsDevelopment()
+                ?
+                    builder.Configuration.GetConnectionString("DB_CONN")
+                :
+                    Environment.GetEnvironmentVariable("DB_CONN"))
+    );
+
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
+.AddEntityFrameworkStores<UserManagementContext>()
+.AddDefaultTokenProviders();
+
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequiredLength = 10;
+    options.Password.RequiredUniqueChars = 3;
+    options.Password.RequireNonAlphanumeric = false;
+    options.SignIn.RequireConfirmedAccount = true;
+});
 
 builder.Services.AddSingleton<EncryptionContext>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<
-    IPasswordManagerAccountRepository<PasswordAccountModel>,
-    PasswordManagerAccountRepository>();
+    IPasswordManagerDbRepository<PasswordAccountModel>,
+    PasswordManagerDbRepository>();
 
 if (!builder.Environment.IsDevelopment())
 {

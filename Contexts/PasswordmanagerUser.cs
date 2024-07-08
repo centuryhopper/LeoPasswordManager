@@ -1,30 +1,17 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace LeoPasswordManager.Contexts;
 
 public partial class PasswordmanagerUser
 {
-    public string Id { get; set; } = null!;
+    public int Id { get; set; }
 
     public string Email { get; set; } = null!;
-
-    public string Passwordhash { get; set; } = null!;
-
-    public string Salt { get; set; } = null!;
 
     public string Firstname { get; set; } = null!;
 
     public string Lastname { get; set; } = null!;
-
-    public BitArray Emailconfirmed { get; set; } = null!;
-
-    public BitArray Lockoutenabled { get; set; } = null!;
-
-    public DateOnly? Lockoutenddateutc { get; set; }
-
-    public int Accessfailedcount { get; set; }
 
     public DateTime? Datelastlogin { get; set; }
 
@@ -34,7 +21,7 @@ public partial class PasswordmanagerUser
 
     public DateTime? Dateretired { get; set; }
 
-    public virtual ICollection<Userrole> Userroles { get; set; } = new List<Userrole>();
+    public string? UmsUserid { get; set; }
 
-    public virtual ICollection<Usertoken> Usertokens { get; set; } = new List<Usertoken>();
+    public virtual ICollection<PasswordmanagerAccount> PasswordmanagerAccounts { get; set; } = new List<PasswordmanagerAccount>();
 }

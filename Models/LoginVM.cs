@@ -1,15 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 namespace LeoPasswordManager.Models;
 
-public class LoginModel
+public class LoginVM
 {
     [Required, EmailAddress]
     public string Email { get; set; }
     [Required]
     public string Password { get; set; }
-
-    public override string ToString()
-    {
-        return $"{nameof(Email)}:{Email}, {nameof(Password)}:{Password}, ";
-    }
+    [Display(Name = "Remember me")]
+    public bool RememberMe { get; set; }
 }
