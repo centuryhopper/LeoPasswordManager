@@ -76,9 +76,30 @@ public class AccountController : Controller
         return RedirectToAction(nameof(HomeController.Welcome), "Home");
     }
 
-    // public async Task<IActionResult> EditProfile()
-    // {
-    //     ViewBag.UserId = User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)!.Value;
-    //     return View();
-    // }
+    public async Task<IActionResult> Profile()
+    {
+        var umsUser = await userManager.GetUserAsync(User);
+        var user = await passwordManagerDbRepository.GetPasswordManagerUser(umsUserId: umsUser!.Id);
+        return View(user);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(PasswordManagerUserVM vm)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = Helpers.GetErrors<AccountController>(ModelState);
+            TempData[TempDataKeys.ALERT_ERROR] = string.Join("$$$", errors);
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var updateUser = await passwordManagerDbRepository.UpdatePasswordManagerUser(vm);
+
+        if (updateUser != null)
+        {
+            TempData[TempDataKeys.ALERT_SUCCESS] = "Your PasswordManager User info has been updated";
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
 }

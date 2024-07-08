@@ -141,6 +141,23 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
         };
     }
 
+    public async Task<PasswordManagerUserVM?> UpdatePasswordManagerUser(PasswordManagerUserVM vm)
+    {
+        try
+        {
+            var passwordManagerUser = await passwordManagerDbContext.PasswordmanagerUsers.FindAsync(vm.Id);
+            passwordManagerUser!.Firstname = vm.Firstname;
+            passwordManagerUser.Lastname = vm.Lastname;
+            await passwordManagerDbContext.SaveChangesAsync();
+
+            return passwordManagerUser?.ToPasswordManagerUserVM();
+        }
+        catch (System.Exception ex)
+        {
+            return null;
+        }
+    }
+
     public async Task<PasswordManagerUserVM?> GetPasswordManagerUser(string umsUserId)
     {
         var passwordManagerUser = await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u=>u.UmsUserid == umsUserId);
