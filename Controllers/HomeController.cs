@@ -39,7 +39,7 @@ public class HomeController : Controller
         }
 
         return Ok("upload csv success!");
-        // return RedirectToAction(nameof(Index), new {pg=1});
+        // return RedirectToAction(nameof(Passwords), new {pg=1});
 
     }
 
@@ -53,12 +53,12 @@ public class HomeController : Controller
         {
             errors = ModelState.GetErrors<HomeController>().ToList();
             TempData[TempDataKeys.ALERT_ERROR] = string.Join("$$$", errors);
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Passwords));
         }
 
         var updatedPasswordDetail = await passwordManagerAccountRepository.UpdateAsync(passwordAccountModel);
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Passwords));
     }
 
     [HttpPost]
@@ -70,7 +70,7 @@ public class HomeController : Controller
         var accountModel = await passwordManagerAccountRepository.GetAccountModelAsync(passwordDetailId, user!.Id);
         var deleteDetail = await passwordManagerAccountRepository.DeleteAsync(accountModel!);
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Passwords));
     }
 
     [HttpPost]
@@ -81,7 +81,7 @@ public class HomeController : Controller
         {
             errors = ModelState.GetErrors<HomeController>().ToList();
             TempData[TempDataKeys.ALERT_ERROR] = string.Join("$$$", errors);
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Passwords));
         }
 
         // logger.LogWarning($"{obj.ToString()}");
@@ -97,11 +97,11 @@ public class HomeController : Controller
             await passwordManagerAccountRepository.CreateAsync(acc);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Passwords));
     }
 
     [Authorize]
-    public async Task<IActionResult> Index(int pg = 1)
+    public async Task<IActionResult> Passwords(int pg = 1)
     {
         logger.LogWarning("logged in!");
         // var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;

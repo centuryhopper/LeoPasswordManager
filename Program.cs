@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.HttpOverrides;
 using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Repositories;
@@ -33,7 +32,6 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Add services to the container.
     // Add services to the container.
     builder.Logging.ClearProviders();
     builder.Host.UseNLog();
@@ -143,7 +141,8 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+    app.MapControllerRoute(name: "default", pattern: "{controller=Account}/{action=Login}");
+    // app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
     app.MapRazorPages();
     app.MapBlazorHub();
 
