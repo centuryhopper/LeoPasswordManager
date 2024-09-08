@@ -103,6 +103,7 @@ public class HomeController : Controller
     [Authorize]
     public async Task<IActionResult> Index(int pg = 1)
     {
+        logger.LogWarning("logged in!");
         // var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var umsUser = await userManager.GetUserAsync(User);
         
