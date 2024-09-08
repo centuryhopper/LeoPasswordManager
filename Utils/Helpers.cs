@@ -96,8 +96,9 @@ public static class Helpers
     {
         return new()
         {
-            Id = dto.Id!
-            ,
+            // ignore assigning id because id here is an autogenerating primary key
+            // Id = dto.Id!
+            // ,
             Userid = dto.UserId!
             ,
             Title = dto.Title!

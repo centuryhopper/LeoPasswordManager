@@ -31,17 +31,43 @@ public class HomeController : Controller
     [Authorize, HttpPost]
     public async Task<IActionResult> UploadCSV(IFormFile file, int userId)
     {
+         if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "File is missing or empty." });
+        }
+
+        // Add debug logs or console output
+        // Console.WriteLine($"File Name: {file.FileName}");
+        // Console.WriteLine($"File Length: {file.Length}");
+        // Console.WriteLine($"User ID: {userId}");
+
         var result = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
+
+        // logger.LogWarning(result.Message);
+        // System.Console.WriteLine("nooo");
 
         if (result.UploadEnum == UploadEnum.FAIL)
         {
-            return BadRequest("failed to upload csv");
+            return BadRequest(new {message = result.Message});
         }
 
-        return Ok("upload csv success!");
-        // return RedirectToAction(nameof(Passwords), new {pg=1});
-
+        return Json(new {message = result.Message});
     }
+
+    // [Authorize, HttpPost]
+    // public async Task<IActionResult> UploadCSV(IFormFile file, int userId)
+    // {
+    //     var result = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
+
+    //     if (result.UploadEnum == UploadEnum.FAIL)
+    //     {
+    //         return BadRequest("failed to upload csv");
+    //     }
+
+    //     return Ok("upload csv success!");
+    //     // return RedirectToAction(nameof(Passwords), new {pg=1});
+
+    // }
 
 
 
@@ -62,7 +88,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> DeletePasswordDetail(string passwordDetailId)
+    public async Task<IActionResult> DeletePasswordDetail(int passwordDetailId)
     {
         var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         // get user id from finding user via ums userid
@@ -70,7 +96,7 @@ public class HomeController : Controller
         var accountModel = await passwordManagerAccountRepository.GetAccountModelAsync(passwordDetailId, user!.Id);
         var deleteDetail = await passwordManagerAccountRepository.DeleteAsync(accountModel!);
 
-        return RedirectToAction(nameof(Passwords));
+        return Json(new {message = "Deletion Successful!"});
     }
 
     [HttpPost]
@@ -103,32 +129,31 @@ public class HomeController : Controller
     [Authorize]
     public async Task<IActionResult> Passwords(int pg = 1)
     {
-        logger.LogWarning("logged in!");
+        // logger.LogWarning("logged in!");
         // var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var umsUser = await userManager.GetUserAsync(User);
-        logger.LogWarning(umsUser is null ? "couldnt find user in the ums": "ums user id: " + umsUser.Id);
-
-        
+        // logger.LogWarning(umsUser is null ? "couldnt find user in the ums": "ums user id: " + umsUser.Id);
 
         // get user id from finding user via ums userid
         var user = (await passwordManagerAccountRepository.GetPasswordManagerUser(umsUserId: umsUser!.Id)) ?? await passwordManagerAccountRepository.CreatePasswordManagerUser(umsUser);
 
         ViewBag.userId = user!.Id;
-        logger.LogWarning(user is null ? "password user not found" : "password user id: " + user.Id.ToString());
+        // logger.LogWarning(user is null ? "password user not found" : "password user id: " + user.Id.ToString());
 
         const int PAGE_SIZE = 5;
         if (pg < 1) pg = 1;
-        logger.LogWarning("getting all passwords associated with " + user?.Id);
+        // logger.LogWarning("getting all passwords associated with " + user?.Id);
         var passwordAccounts = await passwordManagerAccountRepository.GetAllAccountsAsync(user!.Id);
         var pager = new Pager(totalItems: passwordAccounts.Count(), pageNumber: pg, pageSize: PAGE_SIZE);
         int recordsToSkip = (pg - 1) * PAGE_SIZE;
         var pagedDetails = passwordAccounts.Skip(recordsToSkip).Take(pager.PageSize);
-        pagedDetails.ToList().ForEach(x => logger.LogWarning(x.Title));
+        // pagedDetails.ToList().ForEach(x => logger.LogWarning(x.Title));
 
         ViewBag.PagedDetails = pagedDetails;
         ViewBag.Pager = pager;
         ViewBag.TotalRecordsCount = passwordAccounts.Count();
-        logger.LogWarning(passwordAccounts.Count().ToString());
+        ViewBag.PasswordAccounts = passwordAccounts;
+        // logger.LogWarning(passwordAccounts.Count().ToString());
 
         return View();
     }

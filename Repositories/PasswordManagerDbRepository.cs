@@ -24,9 +24,9 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
         this.passwordManagerDbContext = passwordManagerDbContext;
     }
 
-    public async Task<PasswordAccountModel?> GetAccountModelAsync(string id, int userId)
+    public async Task<PasswordAccountModel?> GetAccountModelAsync(int id, int userId)
     {
-        var accountModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(id, userId);
+        var accountModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(id);
 
         return accountModel?.ToPasswordManagerAccountModel();
     }
@@ -36,14 +36,21 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
         model.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password!));
         model.CreatedAt = DateTime.Now;
         model.LastUpdatedAt = DateTime.Now;
-        await passwordManagerDbContext.PasswordmanagerAccounts.AddAsync(model.ToPasswordManagerAccount());
-        await passwordManagerDbContext.SaveChangesAsync();
+        try
+        {
+            await passwordManagerDbContext.PasswordmanagerAccounts.AddAsync(model.ToPasswordManagerAccount());
+            await passwordManagerDbContext.SaveChangesAsync();
+        }
+        catch (System.Exception ex)
+        {
+            return null;
+        }
         return model;
     }
 
     public async Task<PasswordAccountModel?> DeleteAsync(PasswordAccountModel model)
     {
-        var queryModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(model.Id, model.UserId);
+        var queryModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(model.Id);
         passwordManagerDbContext.PasswordmanagerAccounts.Remove(queryModel!);
         await passwordManagerDbContext.SaveChangesAsync();
         return model;
@@ -104,9 +111,12 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
             MissingFieldFound = null,
         };
 
+
         using var streamReader = new StreamReader(file.OpenReadStream());
         using var csvReader = new CsvReader(streamReader, config);
         IAsyncEnumerable<PasswordAccountModel> records;
+
+
 
         try
         {

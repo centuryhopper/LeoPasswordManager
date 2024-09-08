@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using LeoPasswordManager.Entities;
 using NLog;
 using NLog.Web;
+using Radzen;
 
 
 /*
@@ -15,6 +16,10 @@ dotnet ef dbcontext scaffold "Name=ConnectionStrings:DB_CONN" Npgsql.EntityFrame
 
 bulk insert:
 \copy table_name FROM 'path/to/csv_file' WITH (FORMAT csv, HEADER true);
+
+in the PasswordManagerDbContext, make sure this is commented out or removed otherwise the deployed version of this app won't work
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DB_CONN");
 */
 
 
@@ -71,8 +76,10 @@ try
     });
 
     builder.Services.AddServerSideBlazor();
+    builder.Services.AddRadzenComponents();
     builder.Services.AddControllersWithViews();
     builder.Services.AddRazorPages();
+    builder.Services.AddHttpClient();
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddDbContext<UserManagementContext>(options =>
