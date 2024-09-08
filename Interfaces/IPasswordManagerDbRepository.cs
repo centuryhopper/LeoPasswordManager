@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using LeoPasswordManager.Models;
 using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Entities;
 
 namespace LeoPasswordManager.Interfaces;
 

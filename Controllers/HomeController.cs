@@ -1,13 +1,12 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Models;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using LeoPasswordManager.Utilities;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Identity;
+using LeoPasswordManager.Entities;
 
 namespace LeoPasswordManager.Controllers;
 

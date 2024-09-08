@@ -3,6 +3,7 @@ using MimeKit;
 using MailKit.Net.Smtp;
 using LeoPasswordManager.Models;
 using LeoPasswordManager.Contexts;
+using LeoPasswordManager.Entities;
 
 namespace LeoPasswordManager.Utilities;
 

@@ -6,6 +6,7 @@ using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
 using LeoPasswordManager.Models;
 using LeoPasswordManager.Utilities;
+using LeoPasswordManager.Entities;
 
 
 namespace LeoPasswordManager.Repositories;
@@ -213,5 +214,6 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
             return new ServiceResponse(false, "log in date unmarked!");
         }
     }
+
 }
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LeoPasswordManager.Contexts;
+namespace LeoPasswordManager.Entities;
 
 public partial class PasswordmanagerUser
 {
@@ -21,7 +21,7 @@ public partial class PasswordmanagerUser
 
     public DateTime? Dateretired { get; set; }
 
-    public string? UmsUserid { get; set; }
+    public string UmsUserid { get; set; } = null!;
 
     public virtual ICollection<PasswordmanagerAccount> PasswordmanagerAccounts { get; set; } = new List<PasswordmanagerAccount>();
 }

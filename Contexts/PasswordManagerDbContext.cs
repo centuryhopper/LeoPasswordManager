@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using LeoPasswordManager.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LeoPasswordManager.Contexts;
@@ -15,30 +16,15 @@ public partial class PasswordManagerDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Nlog> Nlogs { get; set; }
-
     public virtual DbSet<PasswordmanagerAccount> PasswordmanagerAccounts { get; set; }
 
     public virtual DbSet<PasswordmanagerUser> PasswordmanagerUsers { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DB_CONN");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Nlog>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("nlogs");
-
-            entity.Property(e => e.Datelogged)
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("datelogged");
-            entity.Property(e => e.Level)
-                .HasMaxLength(7)
-                .HasColumnName("level");
-            entity.Property(e => e.Message).HasColumnName("message");
-        });
-
         modelBuilder.Entity<PasswordmanagerAccount>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("passwordmanager_accounts_pkey");
@@ -99,7 +85,7 @@ public partial class PasswordManagerDbContext : DbContext
                 .HasColumnName("lastname");
             entity.Property(e => e.UmsUserid)
                 .HasMaxLength(450)
-                .HasDefaultValueSql("'n/a'::character varying")
+                .HasDefaultValueSql("'default_ums_id'::character varying")
                 .HasColumnName("ums_userid");
         });
 

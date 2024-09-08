@@ -1,7 +1,7 @@
 
 using Microsoft.AspNetCore.Identity;
 
-namespace LeoPasswordManager.Contexts;
+namespace LeoPasswordManager.Entities;
 
 public class ApplicationUser : IdentityUser
 {

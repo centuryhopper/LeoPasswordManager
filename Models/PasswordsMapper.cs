@@ -1,5 +1,5 @@
-using LeoPasswordManager.Contexts;
 using CsvHelper.Configuration;
+using LeoPasswordManager.Entities;
 
 namespace LeoPasswordManager.Models;
 

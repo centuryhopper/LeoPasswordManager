@@ -5,6 +5,7 @@ using LeoPasswordManager.Utilities;
 using Microsoft.AspNetCore.Identity;
 using LeoPasswordManager.Contexts;
 using LeoPasswordManager.Interfaces;
+using LeoPasswordManager.Entities;
 
 
 namespace LeoPasswordManager.Controllers;

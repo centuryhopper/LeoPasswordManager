@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LeoPasswordManager.Contexts;
+namespace LeoPasswordManager.Entities;
 
 public partial class PasswordmanagerAccount
 {
