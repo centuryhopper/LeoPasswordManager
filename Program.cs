@@ -75,8 +75,7 @@ try
         // options.AddPolicy("USER", policy => policy.RequireRole("User"));
     });
 
-    builder.Services.AddServerSideBlazor();
-    builder.Services.AddRadzenComponents();
+    // builder.Services.AddServerSideBlazor();
     builder.Services.AddControllersWithViews();
     builder.Services.AddRazorPages();
     builder.Services.AddHttpClient();
@@ -151,7 +150,7 @@ try
     app.MapControllerRoute(name: "default", pattern: "{controller=Account}/{action=Login}");
     // app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
     app.MapRazorPages();
-    app.MapBlazorHub();
+    // app.MapBlazorHub();
 
     app.Run();
 }
