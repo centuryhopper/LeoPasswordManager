@@ -106,12 +106,15 @@ public class HomeController : Controller
         logger.LogWarning("logged in!");
         // var umsUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var umsUser = await userManager.GetUserAsync(User);
+        logger.LogWarning(umsUser?.Id ?? "couldnt find user in the ums");
+
         
 
         // get user id from finding user via ums userid
         var user = (await passwordManagerAccountRepository.GetPasswordManagerUser(umsUserId: umsUser!.Id)) ?? await passwordManagerAccountRepository.CreatePasswordManagerUser(umsUser);
 
         ViewBag.userId = user!.Id;
+        logger.LogWarning(user?.Id.ToString() ?? "password user not found");
 
         const int PAGE_SIZE = 5;
         if (pg < 1) pg = 1;
@@ -119,10 +122,12 @@ public class HomeController : Controller
         var pager = new Pager(totalItems: passwordAccounts.Count(), pageNumber: pg, pageSize: PAGE_SIZE);
         int recordsToSkip = (pg - 1) * PAGE_SIZE;
         var pagedDetails = passwordAccounts.Skip(recordsToSkip).Take(pager.PageSize);
+        pagedDetails.ToList().ForEach(x => logger.LogWarning(x.Title));
 
         ViewBag.PagedDetails = pagedDetails;
         ViewBag.Pager = pager;
         ViewBag.TotalRecordsCount = passwordAccounts.Count();
+        logger.LogWarning(passwordAccounts.Count().ToString());
 
         return View();
     }
