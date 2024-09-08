@@ -20,9 +20,6 @@ public partial class PasswordManagerDbContext : DbContext
 
     public virtual DbSet<PasswordmanagerUser> PasswordmanagerUsers { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DB_CONN");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<PasswordmanagerAccount>(entity =>
