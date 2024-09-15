@@ -89,13 +89,19 @@ public class PasswordManagerDbRepository : IPasswordManagerDbRepository<Password
 
     public async Task<PasswordAccountModel?> UpdateAsync(PasswordAccountModel model)
     {
-        var dbModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(model.Id, model.UserId);
-        dbModel!.LastUpdatedAt = DateTime.Now;
-        dbModel.Title = model.Title;
-        dbModel.Username = model.Username;
-        dbModel.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password));
-        await passwordManagerDbContext.SaveChangesAsync();
-
+        var dbModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(model.Id);
+        try
+        {
+            dbModel!.LastUpdatedAt = DateTime.Now;
+            dbModel.Title = model.Title;
+            dbModel.Username = model.Username;
+            dbModel.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password));
+            await passwordManagerDbContext.SaveChangesAsync(); 
+        }
+        catch (System.Exception ex)
+        {
+            return null;
+        }
         return model;
     }
 
