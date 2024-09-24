@@ -1,3 +1,5 @@
+global using ConfigurationProvider = Server.Utils.ConfigurationProvider;
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +12,7 @@ using NpgsqlTypes;
 using Server.Contexts;
 using Server.Entities;
 using Server.Repositories;
+using Server.Utils;
 using Swashbuckle.AspNetCore.Filters;
 
 // MUST HAVE IT LIKE THIS FOR NLOG TO RECOGNIZE DOTNET USER-SECRETS INSTEAD OF HARDCODED DELIMIT PLACEHOLDER VALUE FROM APPSETTINGS.JSON
@@ -34,6 +37,7 @@ using Swashbuckle.AspNetCore.Filters;
     builder.Services.AddControllers();
     builder.Services.AddRazorPages();
     builder.Services.AddHttpClient();
+    // builder.Services.AddHttpContextAccessor();
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options=>{
@@ -46,7 +50,10 @@ using Swashbuckle.AspNetCore.Filters;
         options.OperationFilter<SecurityRequirementsOperationFilter>();
     });
 
+    builder.Services.AddSingleton<EncryptionContext>();
+    builder.Services.AddSingleton<ConfigurationProvider>();
     builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+    builder.Services.AddScoped<IPasswordManagerDbRepository, PasswordManagerDbRepository>();
 
     // Configure the Identity database context
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -58,16 +65,15 @@ using Swashbuckle.AspNetCore.Filters;
                         Environment.GetEnvironmentVariable("UserManagementDB"))
             );
 
-    // add your custom db contexts here
-    // builder.Services.AddDbContext<StockDataDbContext>(options =>
-    // {
-    //     options.UseNpgsql(builder.Environment.IsDevelopment()
-    //                 ?
-    //                     builder.Configuration.GetConnectionString("StockDataDB")
-    //                 :
-    //                     Environment.GetEnvironmentVariable("StockDataDB")
-    //                 ).EnableSensitiveDataLogging();
-    // });
+    builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        options.UseNpgsql(
+            builder.Environment.IsDevelopment()
+            ?
+                builder.Configuration.GetConnectionString("DB_CONN")
+            :
+                Environment.GetEnvironmentVariable("DB_CONN")
+        )
+    );
 
     builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()

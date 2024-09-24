@@ -4,16 +4,17 @@ using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Server.Contexts;
 using Server.Repositories;
-using Server.Models;
+using Shared.Models;
 using Server.Entities;
 using Shared.Models;
 using Server.Utils;
 using static Shared.Models.ServiceResponses;
+using System.Security.Claims;
 
 
 namespace Server.Repositories;
 
-public class PasswordManagerDbRepository(EncryptionContext encryptionContext, ILogger<PasswordManagerDbRepository> logger, PasswordManagerDbContext passwordManagerDbContext) : IPasswordManagerDbRepository
+public class PasswordManagerDbRepository(EncryptionContext encryptionContext, ILogger<PasswordManagerDbRepository> logger, PasswordManagerDbContext passwordManagerDbContext, IHttpContextAccessor httpContextAccessor) : IPasswordManagerDbRepository
 {
     public async Task<PasswordAccountDTO?> GetPasswordRecordAsync(int passwordRecordId)
     {
@@ -28,7 +29,7 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         return cnt;
     }
 
-    public async Task<GeneralResponse> UploadCsvAsync(IFormFile file)
+    public async Task<GeneralResponse> UploadCsvAsync(IFormFile file, int userId)
     {
         // set up csv helper and read file
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -54,7 +55,7 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
             {
                 await CreateAsync(new PasswordAccountDTO
                 {
-                    UserId = record.UserId,
+                    UserId = userId,
                     Title = record.Title,
                     Username = record.Username,
                     Password = record.Password,
@@ -176,9 +177,15 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         return new GeneralResponse(Flag: true, Message: "Password Record Updated!");
     }
 
-    public async Task<GeneralResponse> DeleteAsync(int passwordRecordId)
+    public async Task<GeneralResponse?> DeleteAsync(int passwordRecordId)
     {
         var queryModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(passwordRecordId);
+
+        if (queryModel is null)
+        {
+            return null;
+        }
+
         passwordManagerDbContext.PasswordmanagerAccounts.Remove(queryModel!);
 
         try

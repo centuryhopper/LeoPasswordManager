@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Server.Entities;
-using Server.Models;
+using Shared.Models;
 
 
 namespace Server.Utils;

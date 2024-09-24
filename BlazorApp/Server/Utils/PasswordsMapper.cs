@@ -1,5 +1,5 @@
 using CsvHelper.Configuration;
-using Server.Models;
+using Shared.Models;
 
 namespace Server.Utils;
 

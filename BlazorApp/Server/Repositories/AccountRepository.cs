@@ -12,7 +12,7 @@ using static Shared.Models.ServiceResponses;
 
 namespace Server.Repositories;
 
-public class AccountRepository(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IConfiguration configuration, IWebHostEnvironment webHostEnvironment) : IAccountRepository
+public class AccountRepository(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IConfiguration configuration, IWebHostEnvironment webHostEnvironment, PasswordManagerDbContext passwordManagerDbContext) : IAccountRepository
 {
     public async Task<LoginResponse> LoginAccount(LoginDTO loginDTO)
     {
@@ -24,7 +24,24 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, RoleMan
         var getUser = await userManager.FindByEmailAsync(loginDTO.Email);
         if (getUser is null)
         {
-            return new LoginResponse(false, null!, "User not found");
+            // check email in passwordmanager users table and if it is there
+            var passwordManagerUser = await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u=>u.Email == loginDTO.Email);
+
+            if (passwordManagerUser is null)
+            {
+                return new LoginResponse(false, null!, "User not found");
+            }
+
+            // then find the user in the ums by the ums id and overwrite the old email with the new one
+            getUser = await userManager.FindByIdAsync(passwordManagerUser.UmsUserid);
+
+            if (getUser is null)
+            {
+                return new LoginResponse(false, null!, "The user with this email was not found in the UMS.");
+            }
+
+            passwordManagerUser.Email = getUser.Email;
+            await passwordManagerDbContext.SaveChangesAsync();
         }
 
         bool checkUserPasswords = await userManager.CheckPasswordAsync(getUser, loginDTO.Password);
@@ -36,29 +53,29 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, RoleMan
         // your custom new user insert goes here (below is just an example)
 
         // add user to stock user table if they arent in it already
-        // if (await stockDataDbContext.Stockusers.FirstOrDefaultAsync(u => u.UmsUserid == getUser.Id) is null)
-        // {
-        //     try
-        //     {
-                // await stockDataDbContext.Stockusers.AddAsync(new Stockuser {
-                //     UmsUserid = getUser.Id!
-                //     ,Email = getUser.Email!
-                //     ,DateCreated = DateTime.Now
-                //     ,DateLastLogin = DateTime.Now
-                //     ,DateRetired = null
-                // });
-                // await stockDataDbContext.SaveChangesAsync();
-        //     }
-        //     catch (System.Exception ex)
-        //     {
-        //         return new LoginResponse(false, null!, ex.Message);
-        //     }
-        // }
+        if (await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u => u.UmsUserid == getUser.Id) is null)
+        {
+            try
+            {
+                await passwordManagerDbContext.PasswordmanagerUsers.AddAsync(new PasswordmanagerUser {
+                    UmsUserid = getUser.Id!
+                    ,Email = getUser.Email!
+                    ,Datecreated = DateTime.Now
+                    ,Datelastlogin = DateTime.Now
+                    ,Dateretired = null
+                });
+                await passwordManagerDbContext.SaveChangesAsync();
+            }
+            catch (System.Exception ex)
+            {
+                return new LoginResponse(false, null!, ex.Message);
+            }
+        }
 
-        // var stockUser = await stockDataDbContext.Stockusers.FirstOrDefaultAsync(u=>u.UmsUserid == getUser.Id);
+        var stockUser = await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u=>u.UmsUserid == getUser.Id);
 
         var getUserRole = await userManager.GetRolesAsync(getUser);
-        string token = GenerateToken(0/*just a dummy id value for demo*/, getUser.UserName, getUser.Email, getUserRole.First());
+        string token = GenerateToken(stockUser.Id, getUser.UserName, getUser.Email, getUserRole.First());
 
         return new LoginResponse(true, token!, "Login completed");
     }
