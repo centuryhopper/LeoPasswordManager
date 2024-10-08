@@ -141,6 +141,30 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         });
     }
 
+    public async Task<GeneralResponse> CreateMultipleAsync(IEnumerable<PasswordAccountDTO> passwordsToAdd)
+    {
+        var passwordEntities = passwordsToAdd.Select(p=>(new PasswordAccountDTO {
+            UserId = p.UserId,
+            Title = p.Title,
+            Username = p.Username,
+            Password = Convert.ToBase64String(encryptionContext.Encrypt(p.Password!)),
+            CreatedAt = p.CreatedAt,
+            LastUpdatedAt = p.LastUpdatedAt,
+        }).ToPasswordManagerAccount()).ToList();
+
+        try
+        {
+            await passwordManagerDbContext.PasswordmanagerAccounts.AddRangeAsync(passwordEntities);
+            await passwordManagerDbContext.SaveChangesAsync();
+        }
+        catch (System.Exception ex)
+        {
+            return new GeneralResponse(Flag: false, Message: ex.Message);
+        }
+        return new GeneralResponse(Flag: true, Message: "Password records have been added!");
+
+    }
+
     public async Task<GeneralResponse> CreateAsync(PasswordAccountDTO model)
     {
         model.Password = Convert.ToBase64String(encryptionContext.Encrypt(model.Password!));

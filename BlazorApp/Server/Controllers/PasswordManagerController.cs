@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models;
 using Server.Repositories;
+using static Shared.Models.ServiceResponses;
+using Newtonsoft.Json;
 
 namespace Server.Controllers;
 
@@ -73,6 +75,18 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
             return BadRequest(response.Message);
         }
         return Ok(response.Message);
+    }
+
+    [HttpPost("add-passwords")]
+    public async Task<IActionResult> AddPasswordRecords([FromBody] string values)
+    {
+        IEnumerable<PasswordAccountDTO> passwordAccountDTOs = JsonConvert.DeserializeObject<IEnumerable<PasswordAccountDTO>>(values);
+        var response = await passwordManagerAccountRepository.CreateMultipleAsync(passwordAccountDTOs);
+        if (!response.Flag)
+        {
+            return BadRequest(new GeneralResponse(Flag: false, Message: response.Message));
+        }
+        return Ok(new GeneralResponse(Flag: true, Message: response.Message));
     }
 
     [HttpPost("add-password")]
