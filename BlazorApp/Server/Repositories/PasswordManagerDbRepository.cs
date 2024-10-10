@@ -19,6 +19,7 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
     public async Task<PasswordAccountDTO?> GetPasswordRecordAsync(int passwordRecordId)
     {
         var accountModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(passwordRecordId);
+        accountModel.Password = encryptionContext.Decrypt(Convert.FromBase64String(accountModel.Password)).Replace(",", "$");
         return accountModel?.ToPasswordManagerAccountDTO();
     }
 
@@ -201,13 +202,13 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         return new GeneralResponse(Flag: true, Message: "Password Record Updated!");
     }
 
-    public async Task<GeneralResponse?> DeleteAsync(int passwordRecordId)
+    public async Task<GeneralResponse> DeleteAsync(int passwordRecordId)
     {
         var queryModel = await passwordManagerDbContext.PasswordmanagerAccounts.FindAsync(passwordRecordId);
 
         if (queryModel is null)
         {
-            return null;
+            return new GeneralResponse(Flag: false, Message: "This record doesn't exist.");
         }
 
         passwordManagerDbContext.PasswordmanagerAccounts.Remove(queryModel!);

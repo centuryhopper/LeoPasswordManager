@@ -19,16 +19,13 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
     public async Task<IActionResult> DeletePasswordRecord(int passwordRecordId)
     {
         var response = await passwordManagerAccountRepository.DeleteAsync(passwordRecordId);
-        if (response is null)
-        {
-            return NotFound("This record doesn't exist.");
-        }
 
         if (!response.Flag)
         {
-            return BadRequest(response.Message);
+            return BadRequest(response);
         }
-        return Ok(response.Message);
+
+        return Ok(response);
     }
 
     [HttpGet("getPassword/{passwordRecordId:int}")]
@@ -37,7 +34,7 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
         var passwordRecord = await passwordManagerAccountRepository.GetPasswordRecordAsync(passwordRecordId);
         if (passwordRecord is null)
         {
-            return NotFound("This record doesn't exist.");
+            return NotFound(null);
         }
         return Ok(passwordRecord);
     }
@@ -106,9 +103,9 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
         var response = await passwordManagerAccountRepository.UpdateAsync(passwordAccountDTO);
         if (!response.Flag)
         {
-            return BadRequest(response.Message);
+            return BadRequest(response);
         }
-        return Ok(response.Message);
+        return Ok(response);
     }
 }
 
