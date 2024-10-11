@@ -36,7 +36,6 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
-
             // set to null to allow files with only title, usernam, and password headers to be uploaded
             HeaderValidated = null,
             MissingFieldFound = null,
@@ -73,50 +72,6 @@ public class PasswordManagerDbRepository(EncryptionContext encryptionContext, IL
         return new GeneralResponse(Flag: true, Message: "File uploaded!");
 
     }
-
-    // public async Task<PasswordManagerUserVM?> UpdatePasswordManagerUser(PasswordManagerUserVM vm)
-    // {
-    //     try
-    //     {
-    //         var passwordManagerUser = await passwordManagerDbContext.PasswordmanagerUsers.FindAsync(vm.Id);
-    //         passwordManagerUser!.Firstname = vm.Firstname;
-    //         passwordManagerUser.Lastname = vm.Lastname;
-    //         await passwordManagerDbContext.SaveChangesAsync();
-
-    //         return passwordManagerUser?.ToPasswordManagerUserVM();
-    //     }
-    //     catch (System.Exception ex)
-    //     {
-    //         return null;
-    //     }
-    // }
-
-    // public async Task<PasswordManagerUserVM?> GetPasswordManagerUser(string umsUserId)
-    // {
-    //     var passwordManagerUser = await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u => u.UmsUserid == umsUserId);
-
-    //     return passwordManagerUser?.ToPasswordManagerUserVM();
-    // }
-
-    // public async Task<PasswordManagerUserVM?> CreatePasswordManagerUser(ApplicationUser umsUser)
-    // {
-    //     PasswordmanagerUser passwordManagerUser = new()
-    //     {
-    //         Email = umsUser.Email,
-    //         Firstname = "test_firstname",
-    //         Lastname = "test_firstname",
-    //         Datelastlogin = DateTime.Now,
-    //         Datelastlogout = null,
-    //         Datecreated = DateTime.Now,
-    //         Dateretired = null,
-    //         UmsUserid = umsUser.Id,
-    //     };
-
-    //     await passwordManagerDbContext.PasswordmanagerUsers.AddAsync(passwordManagerUser);
-    //     await passwordManagerDbContext.SaveChangesAsync();
-
-    //     return passwordManagerUser.ToPasswordManagerUserVM();
-    // }
 
     public async Task<IEnumerable<PasswordAccountDTO>> GetAllPasswordRecordsAsync(int userId)
     {

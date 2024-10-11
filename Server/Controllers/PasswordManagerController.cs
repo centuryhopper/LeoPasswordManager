@@ -43,7 +43,7 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
     public async Task<IActionResult> GetAllPasswordRecords(int pg = 1)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        logger.LogWarning(userId);
+        // logger.LogWarning(userId);
         var passwordAccounts = await passwordManagerAccountRepository.GetAllPasswordRecordsAsync(Convert.ToInt32(userId));
         return Ok(passwordAccounts);
     }
@@ -53,15 +53,10 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest(new { message = "File is missing or empty." });
+            return BadRequest(new GeneralResponse(Flag: false, Message: "File is missing or empty."));
         }
 
-        // Add debug logs or console output
-        // Console.WriteLine($"File Name: {file.FileName}");
-        // Console.WriteLine($"File Length: {file.Length}");
-        // Console.WriteLine($"User ID: {userId}");
         var userId = Convert.ToInt32(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
         var response = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
 
         // logger.LogWarning(result.Message);
@@ -69,9 +64,9 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
 
         if (!response.Flag)
         {
-            return BadRequest(response.Message);
+            return BadRequest(response);
         }
-        return Ok(response.Message);
+        return Ok(response);
     }
 
     [HttpPost("add-passwords")]
