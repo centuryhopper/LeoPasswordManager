@@ -109,7 +109,22 @@ using Swashbuckle.AspNetCore.Filters;
         builder.WebHost.UseUrls($"http://*:{port}");
     }
 
+    // Add CORS policy
+    const string FLUTTER_CLIENT_CORS = "AllowFlutterClient";
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(FLUTTER_CLIENT_CORS, policy =>
+        {
+            policy.WithOrigins("http://localhost:3000", "https://your-flutter-web-app.com") // Replace with Flutter app URL
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();  // If your Flutter client uses credentials like cookies or auth headers
+        });
+    });
+
     var app = builder.Build();
+
+    app.UseCors(FLUTTER_CLIENT_CORS);
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
