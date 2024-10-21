@@ -5,18 +5,18 @@ List<BottomNavigationBarItem> ourBottomNavBar() {
     BottomNavigationBarItem(
         backgroundColor: Colors.red,
         icon: Icon(Icons.add, color: Colors.black),
-        label: 'Post'),
+        label: 'Passwords'),
     BottomNavigationBarItem(
         backgroundColor: Colors.green,
         icon: Icon(Icons.chat, color: Colors.black),
-        label: 'Chat'),
+        label: 'Settings'),
     BottomNavigationBarItem(
         backgroundColor: Colors.purple,
         icon: Icon(Icons.search, color: Colors.black),
-        label: 'Match'),
+        label: 'Profile'),
     BottomNavigationBarItem(
-        backgroundColor: Colors.pink,
-        icon: Icon(Icons.account_circle, color: Colors.black),
-        label: 'Account'),
+      backgroundColor: Colors.blue,
+      icon: Icon(Icons.logout, color: Colors.black),
+      label: 'Logout'),
   ];
 }

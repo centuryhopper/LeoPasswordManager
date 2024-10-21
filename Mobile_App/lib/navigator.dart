@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/Models/LoginDTO.dart';
 import 'package:mobile_app/constants.dart';
+import 'package:mobile_app/main.dart';
 import 'package:mobile_app/pages/loginpage.dart';
 import 'package:mobile_app/pages/passwordspage.dart';
 import 'package:mobile_app/pages/profilepage.dart';
@@ -38,13 +39,28 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
   @override
   void dispose() {
     super.dispose();
-    
+  }
+
+  // Logout method
+  void _logout() {
+    // Clear any user data or tokens here, for example:
+    // await secureStorage.delete(key: 'jwtToken');
+
+    // Navigate back to login screen and remove all previous routes
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => AppHome()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   // navigate to the page based on the index selected
   void _onItemTapped(int bottomNavButtonIndex) {
     _selectedIndex = bottomNavButtonIndex;
     setState(() {});
+
+    if (bottomNavButtonIndex == 3) {
+      _logout();
+    }
   }
 
   @override

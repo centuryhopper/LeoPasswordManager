@@ -5,6 +5,13 @@ import 'package:mobile_app/pages/loginpage.dart';
 
 const String appName = "PasswordManager";
 
+
+/*
+flutter emulators
+flutter emulators --launch MyNewPixel6
+flutter run
+*/
+
 void main() {
   runApp(AppHome());
 }
@@ -22,6 +29,7 @@ class AppHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: appName,
       theme: ThemeData(
         primarySwatch: Colors.teal,
