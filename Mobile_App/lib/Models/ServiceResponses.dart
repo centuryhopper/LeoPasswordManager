@@ -27,7 +27,7 @@ class GeneralResponse {
 
 class LoginResponse {
   final bool flag;
-  final String token;
+  final String? token;
   final String message;
 
   LoginResponse({

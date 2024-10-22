@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:mobile_app/Models/LoginDTO.dart';
-import 'package:mobile_app/Models/ServiceResponses.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:PasswordManager/Models/ClaimTypes.dart';
+import 'package:PasswordManager/Models/LoginDTO.dart';
+import 'package:PasswordManager/Models/ServiceResponses.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
@@ -38,7 +40,30 @@ class AuthService {
     await prefs.remove(_rememberMeKey);
   }
 
-  Future<LoginResponse?> login(
+  static Future<Map<String, dynamic>> getClaims() async {
+    return {
+      ClaimTypes.role: await _storage.read(key: ClaimTypes.role),
+      ClaimTypes.nameIdentifier:
+          await _storage.read(key: ClaimTypes.nameIdentifier),
+      ClaimTypes.name: await _storage.read(key: ClaimTypes.name),
+      ClaimTypes.email: await _storage.read(key: ClaimTypes.email),
+    };
+  }
+
+  static Future<void> decodeToken(String token) async {
+    // Decode the token
+    Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+    await _storage.write(
+        key: ClaimTypes.role, value: decodedToken[ClaimTypes.role]);
+    await _storage.write(
+        key: ClaimTypes.nameIdentifier, value: decodedToken[ClaimTypes.nameIdentifier]);
+    await _storage.write(
+        key: ClaimTypes.name, value: decodedToken[ClaimTypes.name]);
+    await _storage.write(
+        key: ClaimTypes.email, value: decodedToken[ClaimTypes.email]);
+  }
+
+  static Future<LoginResponse> login(
       String email, String password, bool rememberMe) async {
     // This IP maps localhost on the emulator to your machine's localhost.
     final url = Uri.parse('http://10.0.2.2:5220/api/Account/login');
@@ -62,18 +87,19 @@ class AuthService {
         final jsonResponse = jsonDecode(response.body);
         var result = LoginResponse.fromJson(jsonResponse);
         if (result.flag) {
-          await saveToken(result.token);
+          await saveToken(result.token!);
         }
         await saveRememberMeFlag(rememberMe);
         return result;
       } else {
-        print('Failed to login. Status code: ${response.statusCode}');
-        print('Failed to login. error message: ${response.body}');
-        return null;
+        final jsonResponse = jsonDecode(response.body);
+        // print(jsonResponse);
+        var result = LoginResponse.fromJson(jsonResponse);
+        return result;
       }
     } catch (e) {
-      print('Error during login: $e');
-      return null;
+      return LoginResponse(
+          flag: false, token: "", message: 'Error during login: $e');
     }
   }
 }

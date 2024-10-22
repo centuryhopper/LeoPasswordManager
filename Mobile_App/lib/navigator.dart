@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_app/Models/LoginDTO.dart';
-import 'package:mobile_app/Services/AuthService.dart';
-import 'package:mobile_app/constants.dart';
-import 'package:mobile_app/main.dart';
-import 'package:mobile_app/pages/passwordspage.dart';
-import 'package:mobile_app/pages/profilepage.dart';
-import 'package:mobile_app/pages/settingspage.dart';
+import 'package:PasswordManager/Models/LoginDTO.dart';
+import 'package:PasswordManager/Services/AuthService.dart';
+import 'package:PasswordManager/constants.dart';
+import 'package:PasswordManager/main.dart';
+import 'package:PasswordManager/pages/passwordspage.dart';
+import 'package:PasswordManager/pages/profilepage.dart';
+import 'package:PasswordManager/pages/settingspage.dart';
 
 LoginDTO? _loginDTO;
 
@@ -21,7 +21,8 @@ class NavigationHelperWidget extends StatefulWidget {
   _NavigationHelperWidgetState createState() => _NavigationHelperWidgetState();
 }
 
-class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
+class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
 
   final List<Widget> pages = [
@@ -33,12 +34,34 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
   @override
   void initState() {
     super.initState();
-    // signIn();
+    WidgetsBinding.instance.addObserver(this); // Add observer
   }
 
   @override
-  void dispose() {
+  void dispose() async {
     super.dispose();
+
+    WidgetsBinding.instance.removeObserver(this); // Remove observer
+    if (await AuthService.getToken() != null) {
+      if (!await AuthService.getRememberMeFlag()) {
+        print("clearing login");
+        await AuthService.clearLogin();
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    // App is going to the background
+    if (state == AppLifecycleState.paused) {
+      print('app is paused');
+      // clear local storage data if remember me flag wasnt checked when logging in
+      if (await AuthService.getToken() != null) {
+        if (!await AuthService.getRememberMeFlag()) {
+          await AuthService.clearLogin();
+        }
+      }
+    }
   }
 
   // Logout method
@@ -56,12 +79,14 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
   // navigate to the page based on the index selected
   void _onItemTapped(int bottomNavButtonIndex) {
     _selectedIndex = bottomNavButtonIndex;
-    setState(() {});
 
     if (ourBottomNavBarLst[bottomNavButtonIndex].label?.toLowerCase() ==
         "logout") {
+      // resetting it avoids the error
+      _selectedIndex = 0;
       _logout();
     }
+    setState(() {});
   }
 
   @override

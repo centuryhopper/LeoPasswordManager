@@ -1,5 +1,5 @@
-### mobile_app
+### PasswordManager
 
 This app was created with the following command:
 
-- flutter create --platforms=android,ios mobile_app
+- flutter create --platforms=android,ios PasswordManager

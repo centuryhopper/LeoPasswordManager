@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_app/Services/AuthService.dart';
-import 'package:mobile_app/main.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:PasswordManager/Services/AuthService.dart';
+import 'package:PasswordManager/main.dart';
+import 'package:PasswordManager/navigator.dart';
 
 class LoginPage extends StatefulWidget {
   static const String routeID = "/login";
@@ -14,9 +16,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
-  AuthService authService = AuthService();
-
+class _LoginPageState extends State<LoginPage> {
   bool rememberMe = false;
   bool obscureText = true;
   final TextEditingController? emailController = TextEditingController();
@@ -25,7 +25,6 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // Add observer
 
     // for testing purposes
     // AuthService.clearLogin();
@@ -42,28 +41,8 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   }
 
   @override
-  void dispose() async {
-    WidgetsBinding.instance.removeObserver(this); // Remove observer
-    if (await AuthService.getToken() != null) {
-      if (!await AuthService.getRememberMeFlag()) {
-        await AuthService.clearLogin();
-      }
-    }
+  void dispose() {
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // App is going to the background
-    if (state == AppLifecycleState.paused) {
-      print('app is paused');
-      // clear local storage data if remember me flag wasnt checked when logging in
-      if (await AuthService.getToken() != null) {
-        if (!await AuthService.getRememberMeFlag()) {
-          await AuthService.clearLogin();
-        }
-      }
-    }
   }
 
   @override
@@ -154,31 +133,60 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                   color: Colors.blue, borderRadius: BorderRadius.circular(20)),
               child: ElevatedButton(
                 onPressed: () async {
-                  // Navigator.pushNamed(context, NavigationHelperWidget.routeID);
-                  print("logging in...");
-                  print('${emailController?.text}');
-                  print('${passwordController?.text}');
+                  // print("logging in...");
+                  // print('${emailController?.text}');
+                  // print('${passwordController?.text}');
 
-                  var response = await authService.login(
+                  var response = await AuthService.login(
                       emailController?.text ?? "",
                       passwordController?.text ?? "",
                       rememberMe);
 
-                  print("result: ${response?.toJson()}");
+                  print("result: ${response.toJson()}");
+
+                  if (!response.flag) {
+                    Fluttertoast.showToast(
+                        msg: response.message,
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.CENTER,
+                        timeInSecForIosWeb: 1,
+                        textColor: Colors.black,
+                        backgroundColor: Colors.redAccent,
+                        fontSize: 24.0);
+                    return;
+                  }
+
+                  Fluttertoast.showToast(
+                      msg: response.message,
+                      toastLength: Toast.LENGTH_LONG,
+                      gravity: ToastGravity.CENTER,
+                      timeInSecForIosWeb: 1,
+                      textColor: Colors.black,
+                      backgroundColor: Colors.greenAccent,
+                      fontSize: 24.0);
+
+                  await AuthService.decodeToken(response.token!);
+
+                  await Future.delayed(const Duration(seconds: 6));
+
+                  Navigator.pushNamed(context, NavigationHelperWidget.routeID);
+
+                  // print();
 
                   // if token exists then save login info depending on rememberMe state
-                  var value = await AuthService.getToken();
+                  // var value = await AuthService.getToken();
                   // print('value: $value');
                 },
                 child: const Text(
                   'Login',
-                  style: TextStyle(color: Colors.white, fontSize: 25),
+                  style: TextStyle(color: Colors.black, fontSize: 25),
                 ),
               ),
             ),
             const SizedBox(
               height: 130,
             ),
+            // TODO: Add the link to the ums website here
             const Text('New User? Create Account')
           ],
         ),

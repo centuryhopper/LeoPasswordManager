@@ -1,10 +1,10 @@
+import 'package:PasswordManager/Services/AuthService.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_app/Models/LoginDTO.dart';
-import 'package:mobile_app/navigator.dart';
-import 'package:mobile_app/pages/loginpage.dart';
+import 'package:PasswordManager/Models/LoginDTO.dart';
+import 'package:PasswordManager/navigator.dart';
+import 'package:PasswordManager/pages/loginpage.dart';
 
 const String appName = "PasswordManager";
-
 
 /*
 flutter emulators
@@ -37,7 +37,29 @@ class AppHome extends StatelessWidget {
       ),
       initialRoute: LoginPage.routeID,
       routes: {
-        LoginPage.routeID: (ctx) => LoginPage(appName: appName, appHome: this),
+        LoginPage.routeID: (ctx) => FutureBuilder<String?>(
+              future: AuthService.getToken(), // Replace 'token' with your key
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                      child:
+                          CircularProgressIndicator()); // Show loading indicator while checking
+                }
+
+
+                if (snapshot.hasData && snapshot.data != null) {
+
+                  print('snapshot has data');
+
+                  // If token exists, navigate to HomePage
+                  return NavigationHelperWidget(
+                      loginDTO); // Replace with your main app page
+                } else {
+                  // If token does not exist, navigate to LoginPage
+                  return LoginPage(appName: appName, appHome: this);
+                }
+              },
+            ),
         NavigationHelperWidget.routeID: (ctx) {
           return NavigationHelperWidget(loginDTO);
         }
