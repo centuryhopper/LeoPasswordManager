@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NLog.Web.LayoutRenderers;
 using Server.Contexts;
 using Server.Entities;
 using Shared.Models;
@@ -73,11 +74,29 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, RoleMan
         }
 
         var stockUser = await passwordManagerDbContext.PasswordmanagerUsers.FirstOrDefaultAsync(u=>u.UmsUserid == getUser.Id);
+        stockUser.Datelastlogin = DateTime.Now;
+        await passwordManagerDbContext.SaveChangesAsync();
 
         var getUserRole = await userManager.GetRolesAsync(getUser);
         string token = GenerateToken(stockUser.Id, getUser.UserName, getUser.Email, getUserRole.First());
 
         return new LoginResponse(true, token!, "Login completed");
+    }
+
+    public async Task<GeneralResponse> Logout(int userId)
+    {
+        try
+        {
+            var stockUser = await passwordManagerDbContext.PasswordmanagerUsers.FindAsync(userId);
+            stockUser.Datelastlogout = DateTime.Now;
+            await passwordManagerDbContext.SaveChangesAsync();
+        }
+        catch (System.Exception ex)
+        {
+            return new GeneralResponse(Flag: false, Message: ex.Message);
+        }
+
+        return new GeneralResponse(Flag: true, Message: "log out success!");
     }
 
     private string GenerateToken(int userId, string userName, string email, string role)

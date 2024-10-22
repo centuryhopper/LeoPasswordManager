@@ -1,4 +1,5 @@
 using System.Drawing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Server.Repositories;
@@ -19,6 +20,19 @@ public class AccountController(IAccountRepository accountRepository, ILogger<Acc
         logger.LogCritical("critical");
         logger.LogDebug("debug");
         return Ok("Logging test completed. Check your PostgreSQL LOGS table.");
+    }
+
+    [Authorize]
+    [HttpPost("logout/{userId:int}")]
+    public async Task<IActionResult> Logout(int userId)
+    {
+        var response = await accountRepository.Logout(userId);
+        if (!response.Flag)
+        {
+            return BadRequest(response);
+        }
+        //logger.LogInformation(response.Message);
+        return Ok(response);
     }
 
     [HttpPost("login")]
