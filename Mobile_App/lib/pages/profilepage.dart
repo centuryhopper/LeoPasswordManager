@@ -13,6 +13,12 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16), 
+      child: const Center(
+        child: Text("This is the profile page haha"),
+      ),
+    );
   }
 }
