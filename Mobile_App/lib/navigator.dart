@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/Models/LoginDTO.dart';
+import 'package:mobile_app/Services/AuthService.dart';
 import 'package:mobile_app/constants.dart';
 import 'package:mobile_app/main.dart';
 import 'package:mobile_app/pages/passwordspage.dart';
@@ -41,9 +42,9 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
   }
 
   // Logout method
-  void _logout() {
+  void _logout() async {
     // Clear any user data or tokens here, for example:
-    // await secureStorage.delete(key: 'jwtToken');
+    await AuthService.clearLogin();
 
     // Navigate back to login screen and remove all previous routes
     Navigator.of(context).pushAndRemoveUntil(
@@ -57,7 +58,8 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget> {
     _selectedIndex = bottomNavButtonIndex;
     setState(() {});
 
-    if (ourBottomNavBarLst[bottomNavButtonIndex].label?.toLowerCase() == "logout") {
+    if (ourBottomNavBarLst[bottomNavButtonIndex].label?.toLowerCase() ==
+        "logout") {
       _logout();
     }
   }

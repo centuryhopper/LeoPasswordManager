@@ -25,6 +25,10 @@ public class AccountController(IAccountRepository accountRepository, ILogger<Acc
     public async Task<IActionResult> Login(LoginDTO loginDTO)
     {
         var response = await accountRepository.LoginAccount(loginDTO);
+        if (!response.Flag)
+        {
+            return BadRequest(response);
+        }
         //logger.LogInformation(response.Message);
         return Ok(response);
     }
