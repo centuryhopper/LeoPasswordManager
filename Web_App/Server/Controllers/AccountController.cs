@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,19 @@ public class AccountController(IAccountRepository accountRepository, ILogger<Acc
         logger.LogCritical("critical");
         logger.LogDebug("debug");
         return Ok("Logging test completed. Check your PostgreSQL LOGS table.");
+    }
+
+    [Authorize]
+    [HttpGet("check-password")]
+    public async Task<IActionResult> CheckPassword([FromQuery] string password)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var response = await accountRepository.CheckPassword(email!, password);
+        if (!response.Flag)
+        {
+            return BadRequest(response);
+        }
+        return Ok(response);
     }
 
     [Authorize]

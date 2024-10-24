@@ -64,6 +64,43 @@ class AuthService {
         key: ClaimTypes.email, value: decodedToken[ClaimTypes.email]);
   }
 
+  static Future<GeneralResponse> checkPassword(String password) async {
+    // This IP maps localhost on the emulator to your machine's localhost.
+    final url = Uri.parse(
+        'http://10.0.2.2:5220/api/Account/check-password?password=$password');
+    final jwt = await getToken();
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*',
+          'Authorization': 'Bearer $jwt',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the JSON response into a LoginResponse object
+        GeneralResponse jsonResponse =
+            GeneralResponse.fromJson(jsonDecode(response.body));
+        // print(jsonResponse);
+        return jsonResponse;
+      } else {
+        // print(
+        // 'An error occurred. Status code: ${response.statusCode}. Message: ${response.body}');
+        GeneralResponse jsonResponse =
+            GeneralResponse.fromJson(jsonDecode(response.body));
+        // print(jsonResponse.toJson());
+        return jsonResponse;
+        // throw Exception(
+        //     'An error occurred. Status code: ${response.statusCode}. Message: ${response.body}');
+      }
+    } catch (e) {
+      return GeneralResponse(flag: false, message: e.toString());
+    }
+  }
+
   static Future<LoginResponse> login(
       String email, String password, bool rememberMe) async {
     // This IP maps localhost on the emulator to your machine's localhost.
@@ -83,7 +120,7 @@ class AuthService {
         body: body,
       );
 
-      print('here');
+      // print('here');
       if (response.statusCode == 200) {
         // Parse the JSON response into a LoginResponse object
         final jsonResponse = jsonDecode(response.body);

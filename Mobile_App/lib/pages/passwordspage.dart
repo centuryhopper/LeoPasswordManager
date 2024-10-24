@@ -1,21 +1,28 @@
+import 'package:PasswordManager/Models/LoginDTO.dart';
 import 'package:PasswordManager/Models/PasswordAccountDTO.dart';
+import 'package:PasswordManager/Services/AuthService.dart';
 import 'package:PasswordManager/Services/password_manager_service.dart';
 import 'package:PasswordManager/passwordtable.dart';
 import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
 import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_event.dart';
 import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_state.dart';
 import 'package:flutter/material.dart';
-import 'package:PasswordManager/Models/LoginDTO.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 // TODO: show passwords in a grid with futurebuilder and toggle showing the passwords using bloc state management
 
-class PasswordsPage extends StatelessWidget {
+class PasswordsPage extends StatefulWidget {
   const PasswordsPage({
     super.key,
     LoginDTO? loginDTO,
   });
 
+  @override
+  State<PasswordsPage> createState() => _PasswordsPageState();
+}
+
+class _PasswordsPageState extends State<PasswordsPage> {
   // Simulating an API call to fetch password accounts
   Future<List<PasswordAccountDTO>?> fetchPasswordAccounts() async {
     var passwordAccounts = await PasswordManagerService.getPasswordAccounts();
@@ -25,8 +32,64 @@ class PasswordsPage extends StatelessWidget {
     return passwordAccounts;
   }
 
+  String? passwordValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+    return null;
+  }
+
+  bool obscureText = true;
+  late TextEditingController passwordController;
+
+  @override
+  void initState() {
+    super.initState();
+    passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final passwordVisibilityBloc = context.read<PasswordVisibilityBloc>();
+    Future<String?> openDialog() => showDialog<String?>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+              builder: (context, setState) => AlertDialog(
+                title: const Text('Enter your password'),
+                content: TextFormField(
+                  controller: passwordController,
+                  obscureText: obscureText,
+                  decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureText ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          obscureText = !obscureText;
+                          setState(() {});
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                      labelText: 'Password',
+                      hintText: 'Enter a secure password'),
+                  validator: passwordValidator,
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(passwordController.text);
+                      },
+                      child: const Text('Submit'))
+                ],
+              ),
+            ));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Password Manager'),
@@ -47,7 +110,7 @@ class PasswordsPage extends StatelessWidget {
               child: Column(
                 children: [
                   BlocBuilder<PasswordVisibilityBloc, PasswordVisibilityState>(
-                    builder: (ctx, state) => PaginatedDataTable(
+                    builder: (context, state) => PaginatedDataTable(
                       header: const Text('Password Accounts'),
                       columns: const [
                         DataColumn(label: Text('ID')),
@@ -59,8 +122,7 @@ class PasswordsPage extends StatelessWidget {
                       ],
                       source: PasswordTableSource(
                           passwordAccounts,
-                          ctx.read<
-                              PasswordVisibilityBloc>()), // Custom data source
+                          passwordVisibilityBloc), // Custom data source
                       rowsPerPage: 10, // Set the number of rows per page
                     ),
                   ),
@@ -68,8 +130,42 @@ class PasswordsPage extends StatelessWidget {
                     height: 30.0,
                   ),
                   ElevatedButton(
-                      onPressed: () {
-                        BlocProvider.of<PasswordVisibilityBloc>(context)
+                      onPressed: () async {
+                        if (passwordVisibilityBloc.state.isVisible)
+                        {
+                          passwordVisibilityBloc
+                            .add(PasswordVisibilityToggle());
+                          return;
+                        }
+                        var result = await openDialog();
+                        if (result == null || result.isEmpty) {
+                          Fluttertoast.showToast(
+                              msg: 'Please enter a value',
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.CENTER,
+                              timeInSecForIosWeb: 1,
+                              textColor: Colors.black,
+                              backgroundColor: Colors.redAccent,
+                              fontSize: 24.0);
+                          return;
+                        }
+                        passwordController.clear();
+
+                        var response = await AuthService.checkPassword(result);
+
+                        if (!response.flag) {
+                          Fluttertoast.showToast(
+                              msg: response.message,
+                              toastLength: Toast.LENGTH_LONG,
+                              gravity: ToastGravity.CENTER,
+                              timeInSecForIosWeb: 1,
+                              textColor: Colors.black,
+                              backgroundColor: Colors.redAccent,
+                              fontSize: 24.0);
+                          return;
+                        }
+
+                        passwordVisibilityBloc
                             .add(PasswordVisibilityToggle());
                       },
                       child: const Text('Show/Hide Password')),

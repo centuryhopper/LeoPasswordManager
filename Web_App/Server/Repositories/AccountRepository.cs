@@ -15,6 +15,18 @@ namespace Server.Repositories;
 
 public class AccountRepository(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IConfiguration configuration, IWebHostEnvironment webHostEnvironment, PasswordManagerDbContext passwordManagerDbContext) : IAccountRepository
 {
+    public async Task<GeneralResponse> CheckPassword(string email, string password)
+    {
+        var getUser = await userManager.FindByEmailAsync(email);
+        bool checkUserPasswords = await userManager.CheckPasswordAsync(getUser!, password);
+        if (!checkUserPasswords)
+        {
+            return new GeneralResponse(false, "Incorrect password");
+        }
+
+        return new GeneralResponse(true, "Success");
+    }
+
     public async Task<LoginResponse> LoginAccount(LoginDTO loginDTO)
     {
         if (loginDTO is null)
