@@ -12,7 +12,7 @@ class PasswordTableSource extends DataTableSource {
   @override
   DataRow getRow(int index) {
     assert(index >= 0);
-    if (index >= _passwordAccounts.length) return null!;
+    // if (index >= _passwordAccounts.length) return null;
 
     final passwordAccount = _passwordAccounts[index];
 

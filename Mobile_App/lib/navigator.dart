@@ -46,7 +46,7 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
     WidgetsBinding.instance.removeObserver(this); // Remove observer
     if (await AuthService.getToken() != null) {
       if (!await AuthService.getRememberMeFlag()) {
-        print("clearing login");
+        // print("clearing login");
         await AuthService.clearLogin();
       }
     }
@@ -56,7 +56,7 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     // App is going to the background
     if (state == AppLifecycleState.paused) {
-      print('app is paused');
+      // print('app is paused');
       // clear local storage data if remember me flag wasnt checked when logging in
       if (await AuthService.getToken() != null) {
         if (!await AuthService.getRememberMeFlag()) {

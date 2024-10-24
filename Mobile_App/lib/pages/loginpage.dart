@@ -34,15 +34,15 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     // for testing purposes
     // AuthService.clearLogin();
-    var waitForToken = AuthService.getToken();
-    waitForToken.then((val) {
-      print('retrieved token: $val');
-    }).catchError((err) => print(err));
+    // var waitForToken = AuthService.getToken();
+    // waitForToken.then((val) {
+    //   print('retrieved token: $val');
+    // }).catchError((err) => print(err));
 
-    var waitForRememberMeFlag = AuthService.getRememberMeFlag();
-    waitForRememberMeFlag.then((val) {
-      print('retrieved rememberMeFlag: $val');
-    }).catchError((err) => print(err));
+    // var waitForRememberMeFlag = AuthService.getRememberMeFlag();
+    // waitForRememberMeFlag.then((val) {
+    //   print('retrieved rememberMeFlag: $val');
+    // }).catchError((err) => print(err));
   }
 
   @override

@@ -65,9 +65,10 @@ class AuthService {
   }
 
   static Future<GeneralResponse> checkPassword(String password) async {
-    // This IP maps localhost on the emulator to your machine's localhost.
+    // This IP maps localhost on the emulator to your machine's localhost:
+    // http://10.0.2.2:5220
     final url = Uri.parse(
-        'http://10.0.2.2:5220/api/Account/check-password?password=$password');
+        'https://leopasswordmanager-production.up.railway.app/api/Account/check-password?password=$password');
     final jwt = await getToken();
 
     try {
@@ -104,14 +105,14 @@ class AuthService {
   static Future<LoginResponse> login(
       String email, String password, bool rememberMe) async {
     // This IP maps localhost on the emulator to your machine's localhost.
-    final url = Uri.parse('http://10.0.2.2:5220/api/Account/login');
+    final url = Uri.parse('https://leopasswordmanager-production.up.railway.app/api/Account/login');
 
     // Prepare the request body
     final body = jsonEncode(
         LoginDTO(email: email, password: password, rememberMe: rememberMe)
             .toJson());
 
-    print('body: ' + body);
+    // print('body: $body');
 
     try {
       final response = await http.post(
