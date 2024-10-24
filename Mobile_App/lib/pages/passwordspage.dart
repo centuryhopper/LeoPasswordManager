@@ -1,7 +1,12 @@
 import 'package:PasswordManager/Models/PasswordAccountDTO.dart';
+import 'package:PasswordManager/Services/password_manager_service.dart';
 import 'package:PasswordManager/passwordtable.dart';
+import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
+import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_event.dart';
+import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_state.dart';
 import 'package:flutter/material.dart';
 import 'package:PasswordManager/Models/LoginDTO.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 // TODO: show passwords in a grid with futurebuilder and toggle showing the passwords using bloc state management
 
@@ -12,22 +17,12 @@ class PasswordsPage extends StatelessWidget {
   });
 
   // Simulating an API call to fetch password accounts
-  Future<List<PasswordAccountDTO>> fetchPasswordAccounts() async {
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-
-    // Dummy data
-    return List.generate(
-      100,
-      (index) => PasswordAccountDTO(
-        id: index + 1,
-        userId: 1,
-        title: "Account $index",
-        username: "user$index",
-        password: "password$index",
-        createdAt: DateTime.now().subtract(Duration(days: index)),
-        lastUpdatedAt: DateTime.now(),
-      ),
-    );
+  Future<List<PasswordAccountDTO>?> fetchPasswordAccounts() async {
+    var passwordAccounts = await PasswordManagerService.getPasswordAccounts();
+    if (passwordAccounts == null) {
+      throw Exception("Couldn't retrieve password accounts from the server");
+    }
+    return passwordAccounts;
   }
 
   @override
@@ -35,8 +30,9 @@ class PasswordsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Password Manager'),
+        automaticallyImplyLeading: false,
       ),
-      body: FutureBuilder<List<PasswordAccountDTO>>(
+      body: FutureBuilder<List<PasswordAccountDTO>?>(
         future: fetchPasswordAccounts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -47,18 +43,41 @@ class PasswordsPage extends StatelessWidget {
             return const Center(child: Text('No password accounts available'));
           } else {
             final passwordAccounts = snapshot.data!;
-            return PaginatedDataTable(
-              header: const Text('Password Accounts'),
-              columns: const [
-                DataColumn(label: Text('ID')),
-                DataColumn(label: Text('Title')),
-                DataColumn(label: Text('Username')),
-                DataColumn(label: Text('Password')),
-                DataColumn(label: Text('Created At')),
-                DataColumn(label: Text('Last Updated At')),
-              ],
-              source: PasswordTableSource(passwordAccounts), // Custom data source
-              rowsPerPage: 10, // Set the number of rows per page
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  BlocBuilder<PasswordVisibilityBloc, PasswordVisibilityState>(
+                    builder: (ctx, state) => PaginatedDataTable(
+                      header: const Text('Password Accounts'),
+                      columns: const [
+                        DataColumn(label: Text('ID')),
+                        DataColumn(label: Text('Title')),
+                        DataColumn(label: Text('Username')),
+                        DataColumn(label: Text('Password')),
+                        DataColumn(label: Text('Created At')),
+                        DataColumn(label: Text('Last Updated At')),
+                      ],
+                      source: PasswordTableSource(
+                          passwordAccounts,
+                          ctx.read<
+                              PasswordVisibilityBloc>()), // Custom data source
+                      rowsPerPage: 10, // Set the number of rows per page
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 30.0,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        BlocProvider.of<PasswordVisibilityBloc>(context)
+                            .add(PasswordVisibilityToggle());
+                      },
+                      child: const Text('Show/Hide Password')),
+                  const SizedBox(
+                    height: 30.0,
+                  ),
+                ],
+              ),
             );
           }
         },
@@ -66,4 +85,3 @@ class PasswordsPage extends StatelessWidget {
     );
   }
 }
-

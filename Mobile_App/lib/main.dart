@@ -49,7 +49,7 @@ class AppHome extends StatelessWidget {
 
                 if (snapshot.hasData && snapshot.data != null) {
 
-                  print('snapshot has data');
+                  // print('snapshot has data');
 
                   // If token exists, navigate to HomePage
                   return NavigationHelperWidget(

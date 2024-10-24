@@ -1,3 +1,4 @@
+import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:PasswordManager/Models/LoginDTO.dart';
 import 'package:PasswordManager/Services/AuthService.dart';
@@ -6,6 +7,7 @@ import 'package:PasswordManager/main.dart';
 import 'package:PasswordManager/pages/passwordspage.dart';
 import 'package:PasswordManager/pages/profilepage.dart';
 import 'package:PasswordManager/pages/settingspage.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 LoginDTO? _loginDTO;
 
@@ -79,7 +81,6 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
   // navigate to the page based on the index selected
   void _onItemTapped(int bottomNavButtonIndex) {
     _selectedIndex = bottomNavButtonIndex;
-
     if (ourBottomNavBarLst[bottomNavButtonIndex].label?.toLowerCase() ==
         "logout") {
       // resetting it avoids the error
@@ -92,7 +93,11 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[_selectedIndex],
+      body: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (ctx) => PasswordVisibilityBloc())
+        ],
+        child: pages[_selectedIndex]),
 
       // https://api.flutter.dev/flutter/material/BottomNavigationBar-class.html
       // https://www.youtube.com/watch?v=elLkVWt7gRM&ab_channel=ProgrammingAddict

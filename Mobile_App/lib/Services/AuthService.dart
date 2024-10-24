@@ -56,7 +56,8 @@ class AuthService {
     await _storage.write(
         key: ClaimTypes.role, value: decodedToken[ClaimTypes.role]);
     await _storage.write(
-        key: ClaimTypes.nameIdentifier, value: decodedToken[ClaimTypes.nameIdentifier]);
+        key: ClaimTypes.nameIdentifier,
+        value: decodedToken[ClaimTypes.nameIdentifier]);
     await _storage.write(
         key: ClaimTypes.name, value: decodedToken[ClaimTypes.name]);
     await _storage.write(
@@ -73,7 +74,7 @@ class AuthService {
         LoginDTO(email: email, password: password, rememberMe: rememberMe)
             .toJson());
 
-    // print(body);
+    print('body: ' + body);
 
     try {
       final response = await http.post(
@@ -82,6 +83,7 @@ class AuthService {
         body: body,
       );
 
+      print('here');
       if (response.statusCode == 200) {
         // Parse the JSON response into a LoginResponse object
         final jsonResponse = jsonDecode(response.body);
@@ -92,6 +94,7 @@ class AuthService {
         await saveRememberMeFlag(rememberMe);
         return result;
       } else {
+        // print('response.body: ' + response.body);
         final jsonResponse = jsonDecode(response.body);
         // print(jsonResponse);
         var result = LoginResponse.fromJson(jsonResponse);

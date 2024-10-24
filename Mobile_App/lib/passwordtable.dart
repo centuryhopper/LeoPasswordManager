@@ -1,13 +1,13 @@
-
-
 import 'package:PasswordManager/Models/PasswordAccountDTO.dart';
+import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class PasswordTableSource extends DataTableSource {
   final List<PasswordAccountDTO> _passwordAccounts;
+  final PasswordVisibilityBloc _passwordVisibilityBloc;
 
-  PasswordTableSource(this._passwordAccounts);
+  PasswordTableSource(this._passwordAccounts, this._passwordVisibilityBloc);
 
   @override
   DataRow getRow(int index) {
@@ -22,11 +22,13 @@ class PasswordTableSource extends DataTableSource {
         DataCell(Text('${passwordAccount.id}')),
         DataCell(Text(passwordAccount.title ?? '')),
         DataCell(Text(passwordAccount.username ?? '')),
-        DataCell(Text(passwordAccount.password)),
-        DataCell(
-          Text(passwordAccount.createdAt == null ? '' : DateFormat('yyyy-MM-dd').format(passwordAccount.createdAt!))
-        ),
-        DataCell(Text(passwordAccount.lastUpdatedAt == null ? '' : DateFormat('yyyy-MM-dd').format(passwordAccount.lastUpdatedAt!))),
+        DataCell( Text(_passwordVisibilityBloc.state.isVisible ? passwordAccount.password : '●●●●●●●●'),),
+        DataCell(Text(passwordAccount.createdAt == null
+            ? ''
+            : DateFormat('yyyy-MM-dd').format(passwordAccount.createdAt!))),
+        DataCell(Text(passwordAccount.lastUpdatedAt == null
+            ? ''
+            : DateFormat('yyyy-MM-dd').format(passwordAccount.lastUpdatedAt!))),
       ],
     );
   }
