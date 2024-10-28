@@ -49,6 +49,12 @@
                     }
                     Login
                 </button>
+                @if (!string.IsNullOrWhiteSpace(errMsg))
+                {
+                    <p class="text-danger m-3">
+                        @errMsg
+                    </p>
+                }
             </p>
         </div>
     </EditForm>
@@ -61,14 +67,26 @@
         </a>
     </p>
 </div>
+
 <NotificationModal @ref="notificationModal" />
+<CooldownTimer @ref="cooldownTimer" CooldownTime="30" MaxAttempts="5" OnCooldownComplete="OnCooldownComplete" />
+
 @code {
     private NotificationModal notificationModal = default!;
+    private CooldownTimer cooldownTimer = default!;
     private LoginDTO loginDTO = new();
     private bool isPasswordVisible = false;
     private string passwordType => isPasswordVisible ? "text" : "password";
     private string iconClass => isPasswordVisible ? "fa-eye" : "fa-eye-slash";
     private bool loading = false;
+
+    private string errMsg = "";
+
+    private void OnCooldownComplete()
+    {
+        StateHasChanged();
+    }
+
     private void TogglePasswordVisibility(MouseEventArgs mouseEventArgs)
     {
         if (mouseEventArgs != null)
@@ -89,20 +107,38 @@
 
     protected override async Task OnInitializedAsync()
     {
-        //await jsRuntime.InvokeVoidAsync("showHidePasswordField", "show_hide_password");
-        //HttpClient httpClient = httpClientFactory.CreateClient(Constants.HTTP_CLIENT);
-        //await httpClient.GetAsync("api/Account/nlog-test");
+        // await jsRuntime.InvokeVoidAsync("showHidePasswordField", "show_hide_password");
+        // HttpClient httpClient = httpClientFactory.CreateClient(Constants.HTTP_CLIENT);
+        // await httpClient.GetAsync("api/Account/nlog-test");
     }
+
     private async Task HandleSubmit()
     {
+        if (cooldownTimer.IsCoolingDown)
+        {
+            errMsg = "";
+            return;
+        }
+
+        loading = true;
+        errMsg = ""; // Clear any previous error messages
+
         // Handle login logic here
         //Console.WriteLine("showing modal");
         var response = await accountService.LoginAsync(loginDTO);
+        loading = false;
         if (!response.Flag)
         {
-            notificationModal.Show("Error", response.Message, ModalType.ERROR);
+            cooldownTimer.IncrementSubmissionCount();
+            //notificationModal.Show("Error", response.Message, ModalType.ERROR);
+            //Console.WriteLine(response.Message);
+            if (!cooldownTimer.IsCoolingDown)
+            {
+                errMsg = response.Message;
+            }
             return;
         }
+        cooldownTimer.ResetSubmissionCount();
         NavigationManager.NavigateTo("parsed-claims", true);
     }
     private async Task HandleErrors()

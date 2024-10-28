@@ -30,32 +30,38 @@ public class AccountService : IAccountService
 
     public async Task<LoginResponse> LoginAsync(LoginDTO loginDTO)
     {
-        //System.Console.WriteLine("logging in");
-        var response = await httpClient.PostAsJsonAsync("api/Account/login", loginDTO);
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            throw new Exception("Failed to validate session for user");
-        }
-        if (string.IsNullOrWhiteSpace(loginResponse.Token))
-        {
-            // throw new Exception("Couldn't get a token");
-            return loginResponse;
-        }
+            //System.Console.WriteLine("logging in");
+            var response = await httpClient.PostAsJsonAsync("api/Account/login", loginDTO);
+            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception(loginResponse!.Message);
+            }
+            if (string.IsNullOrWhiteSpace(loginResponse.Token))
+            {
+                throw new Exception("Couldn't get a token");
+            }
 
-        if (loginDTO.RememberMe)
-        {
-            await localStorageService.SetItemAsync("authToken", loginResponse!.Token);
-        }
-        else
-        {
-            await sessionStorageService.SetItemAsync("authToken", loginResponse!.Token);
-        }
+            if (loginDTO.RememberMe)
+            {
+                await localStorageService.SetItemAsync("authToken", loginResponse!.Token);
+            }
+            else
+            {
+                await sessionStorageService.SetItemAsync("authToken", loginResponse!.Token);
+            }
 
-        ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginResponse!.Token);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResponse!.Token);
+            ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginResponse!.Token);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResponse!.Token);
 
-        return loginResponse!;
+            return loginResponse!;
+        }
+        catch (System.Exception ex)
+        {
+            return new LoginResponse(Flag: false, Token: "", Message: ex.Message);
+        }
     }
 
     public async Task LogoutAsync()
