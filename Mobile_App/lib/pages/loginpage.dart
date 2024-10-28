@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:PasswordManager/Services/AuthService.dart';
 import 'package:PasswordManager/main.dart';
 import 'package:PasswordManager/navigator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends StatefulWidget {
   static const String routeID = "/login";
@@ -157,18 +158,18 @@ class _LoginPageState extends State<LoginPage> {
                 },
                 controlAffinity: ListTileControlAffinity.leading,
               ),
-              const SizedBox(
-                height: 30,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  //TODO: redirect user to user management system
-                },
-                child: const Text(
-                  'Forgot Password',
-                  style: TextStyle(color: Colors.blue, fontSize: 15),
-                ),
-              ),
+              // const SizedBox(
+              //   height: 30,
+              // ),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     //TODO: redirect user to user management system
+              //   },
+              //   child: const Text(
+              //     'Forgot Password',
+              //     style: TextStyle(color: Colors.blue, fontSize: 15),
+              //   ),
+              // ),
               const SizedBox(
                 height: 30,
               ),
@@ -176,14 +177,15 @@ class _LoginPageState extends State<LoginPage> {
                 height: 50,
                 width: 250,
                 decoration: BoxDecoration(
-                    color: Colors.blue, borderRadius: BorderRadius.circular(20)),
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(20)),
                 child: ElevatedButton(
                   onPressed: () async {
                     if (!formKey.currentState!.validate()) {
                       // If form is invalid, do not proceed
                       return;
                     }
-          
+
                     if (loginAttempts > 5) {
                       if (showLoginTimeout) {
                         return;
@@ -193,14 +195,14 @@ class _LoginPageState extends State<LoginPage> {
                       startCountdown();
                       return;
                     }
-          
+
                     var response = await AuthService.login(
                         emailController?.text ?? "",
                         passwordController?.text ?? "",
                         rememberMe);
-          
+
                     // print("result: ${response.toJson()}");
-          
+
                     if (!response.flag) {
                       Fluttertoast.showToast(
                           msg: response.message,
@@ -214,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                       setState(() {});
                       return;
                     }
-          
+
                     Fluttertoast.showToast(
                         msg: response.message,
                         toastLength: Toast.LENGTH_LONG,
@@ -223,11 +225,12 @@ class _LoginPageState extends State<LoginPage> {
                         textColor: Colors.black,
                         backgroundColor: Colors.greenAccent,
                         fontSize: 24.0);
-          
+
                     await AuthService.decodeToken(response.token!);
                     await Future.delayed(const Duration(seconds: 6));
-                    Navigator.pushNamed(context, NavigationHelperWidget.routeID);
-          
+                    Navigator.pushNamed(
+                        context, NavigationHelperWidget.routeID);
+
                     // if token exists then save login info depending on rememberMe state
                     // var value = await AuthService.getToken();
                     // print('value: $value');
@@ -248,8 +251,25 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(
                 height: 130,
               ),
-              // TODO: Add the link to the ums website here
-              const Text('New User? Create Account')
+              GestureDetector(
+                onTap: () async {
+                  const String url = 'https://dotnetusermanagementsystem-production.up.railway.app/';
+                  final Uri uri = Uri.parse(
+                      url);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  } else {
+                    throw 'Could not launch $url';
+                  }
+                },
+                child: const Text(
+                  'New User? Create Account',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

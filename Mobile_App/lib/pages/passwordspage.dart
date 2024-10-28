@@ -3,14 +3,11 @@ import 'package:PasswordManager/Models/PasswordAccountDTO.dart';
 import 'package:PasswordManager/Services/AuthService.dart';
 import 'package:PasswordManager/Services/password_manager_service.dart';
 import 'package:PasswordManager/passwordtable.dart';
-import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
-import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_event.dart';
-import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-// TODO: show passwords in a grid with futurebuilder and toggle showing the passwords using bloc state management
+// show passwords in a grid with futurebuilder and toggle showing the passwords
 
 class PasswordsPage extends StatefulWidget {
   const PasswordsPage({
@@ -40,12 +37,14 @@ class _PasswordsPageState extends State<PasswordsPage> {
   }
 
   bool obscureText = true;
+  bool isVisible = false;
   late TextEditingController passwordController;
 
   @override
   void initState() {
     super.initState();
     passwordController = TextEditingController();
+    // print(AuthService.getToken().then((res) => print(res)));
   }
 
   @override
@@ -56,7 +55,7 @@ class _PasswordsPageState extends State<PasswordsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final passwordVisibilityBloc = context.read<PasswordVisibilityBloc>();
+    // final passwordVisibilityBloc = context.read<PasswordVisibilityBloc>();
     Future<String?> openDialog() => showDialog<String?>(
         context: context,
         builder: (context) => StatefulBuilder(
@@ -106,11 +105,12 @@ class _PasswordsPageState extends State<PasswordsPage> {
             return const Center(child: Text('No password accounts available'));
           } else {
             final passwordAccounts = snapshot.data!;
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  BlocBuilder<PasswordVisibilityBloc, PasswordVisibilityState>(
-                    builder: (context, state) => PaginatedDataTable(
+            // statefulbuilder is handy for rerendering itself with its own local setState() rather than the entire stateful widget's setState()
+            return StatefulBuilder(
+              builder: (context, setState) => SingleChildScrollView(
+                child: Column(
+                  children: [
+                    PaginatedDataTable(
                       header: const Text('Password Accounts'),
                       columns: const [
                         DataColumn(label: Text('ID')),
@@ -121,58 +121,57 @@ class _PasswordsPageState extends State<PasswordsPage> {
                         DataColumn(label: Text('Last Updated At')),
                       ],
                       source: PasswordTableSource(
-                          passwordAccounts,
-                          passwordVisibilityBloc), // Custom data source
+                          passwordAccounts, isVisible), // Custom data source
                       rowsPerPage: 10, // Set the number of rows per page
                     ),
-                  ),
-                  const SizedBox(
-                    height: 30.0,
-                  ),
-                  ElevatedButton(
-                      onPressed: () async {
-                        if (passwordVisibilityBloc.state.isVisible)
-                        {
-                          passwordVisibilityBloc
-                            .add(PasswordVisibilityToggle());
-                          return;
-                        }
-                        var result = await openDialog();
-                        if (result == null || result.isEmpty) {
-                          Fluttertoast.showToast(
-                              msg: 'Please enter a value',
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.CENTER,
-                              timeInSecForIosWeb: 1,
-                              textColor: Colors.black,
-                              backgroundColor: Colors.redAccent,
-                              fontSize: 24.0);
-                          return;
-                        }
-                        passwordController.clear();
+                    const SizedBox(
+                      height: 30.0,
+                    ),
+                    ElevatedButton(
+                        onPressed: () async {
+                          if (isVisible) {
+                            isVisible = false;
+                            setState(() {});
+                            return;
+                          }
+                          var result = await openDialog();
+                          if (result == null || result.isEmpty) {
+                            Fluttertoast.showToast(
+                                msg: 'Please enter a value',
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.CENTER,
+                                timeInSecForIosWeb: 1,
+                                textColor: Colors.black,
+                                backgroundColor: Colors.redAccent,
+                                fontSize: 24.0);
+                            return;
+                          }
+                          passwordController.clear();
 
-                        var response = await AuthService.checkPassword(result);
+                          var response =
+                              await AuthService.checkPassword(result);
 
-                        if (!response.flag) {
-                          Fluttertoast.showToast(
-                              msg: response.message,
-                              toastLength: Toast.LENGTH_LONG,
-                              gravity: ToastGravity.CENTER,
-                              timeInSecForIosWeb: 1,
-                              textColor: Colors.black,
-                              backgroundColor: Colors.redAccent,
-                              fontSize: 24.0);
-                          return;
-                        }
+                          if (!response.flag) {
+                            Fluttertoast.showToast(
+                                msg: response.message,
+                                toastLength: Toast.LENGTH_LONG,
+                                gravity: ToastGravity.CENTER,
+                                timeInSecForIosWeb: 1,
+                                textColor: Colors.black,
+                                backgroundColor: Colors.redAccent,
+                                fontSize: 24.0);
+                            return;
+                          }
 
-                        passwordVisibilityBloc
-                            .add(PasswordVisibilityToggle());
-                      },
-                      child: const Text('Show/Hide Password')),
-                  const SizedBox(
-                    height: 30.0,
-                  ),
-                ],
+                          isVisible = true;
+                          setState(() {});
+                        },
+                        child: const Text('Show/Hide Password')),
+                    const SizedBox(
+                      height: 30.0,
+                    ),
+                  ],
+                ),
               ),
             );
           }

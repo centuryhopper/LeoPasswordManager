@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:PasswordManager/Models/ClaimTypes.dart';
-
 import 'package:PasswordManager/Models/LoginDTO.dart';
 import 'package:PasswordManager/Services/AuthService.dart';
 
@@ -20,55 +19,92 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Profile Information'),
-        automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: getClaims(), // Call your async function here
+        future: getClaims(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // While the data is being loaded
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            // If there's an error
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
-            // Once data is available
             final claims = snapshot.data!;
             final email = claims[ClaimTypes.email];
             final role = claims[ClaimTypes.role];
             final userId = claims[ClaimTypes.nameIdentifier];
             final name = claims[ClaimTypes.name];
 
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Name: $name',
-                    style: const TextStyle(fontSize: 24.0), // Set your desired font size here
-                  ),
-                  Text(
-                    'Email: $email',
-                    style: const TextStyle(fontSize: 24.0), // Set your desired font size here
-                  ),
-                  Text(
-                    'Role: $role',
-                    style: const TextStyle(fontSize: 24.0), // Set your desired font size here
-                  ),
-                  Text(
-                    'User ID: $userId',
-                    style: const TextStyle(fontSize: 24.0), // Set your desired font size here
-                  ),
-                ],
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildProfileInfo('Name', name),
+                            const Divider(),
+                            _buildProfileInfo('Email', email),
+                            const Divider(),
+                            _buildProfileInfo('Role', role),
+                            const Divider(),
+                            _buildProfileInfo('User ID', userId),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // const SizedBox(height: 20), // Spacing after the card
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     // Add any action, like editing profile or logging out
+                    //   },
+                    //   style: ElevatedButton.styleFrom(
+                    //     padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(10),
+                    //     ),
+                    //   ),
+                    //   child: const Text('Edit Profile'),
+                    // ),
+                  ],
+                ),
               ),
             );
           } else {
-            // Fallback for any other case
             return const Center(child: Text('No data available.'));
           }
         },
       ),
+    );
+  }
+
+  Widget _buildProfileInfo(String label, String? value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          '$label:',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          value ?? 'N/A',
+          style: TextStyle(
+            fontSize: 20,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
     );
   }
 }

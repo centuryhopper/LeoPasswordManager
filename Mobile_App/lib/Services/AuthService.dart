@@ -35,7 +35,8 @@ class AuthService {
 
   // Clear login token
   static Future<void> clearLogin() async {
-    await _storage.delete(key: _tokenKey);
+    // await _storage.delete(key: _tokenKey);
+    await _storage.deleteAll();
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_rememberMeKey);
   }
@@ -105,7 +106,8 @@ class AuthService {
   static Future<LoginResponse> login(
       String email, String password, bool rememberMe) async {
     // This IP maps localhost on the emulator to your machine's localhost.
-    final url = Uri.parse('https://leopasswordmanager-production.up.railway.app/api/Account/login');
+    final url = Uri.parse(
+        'https://leopasswordmanager-production.up.railway.app/api/Account/login');
 
     // Prepare the request body
     final body = jsonEncode(

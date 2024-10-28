@@ -13,6 +13,7 @@ flutter run
 */
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(AppHome());
 }
 
@@ -37,29 +38,32 @@ class AppHome extends StatelessWidget {
       ),
       initialRoute: LoginPage.routeID,
       routes: {
-        LoginPage.routeID: (ctx) => FutureBuilder<String?>(
-              future: AuthService.getToken(), // Replace 'token' with your key
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child:
-                          CircularProgressIndicator()); // Show loading indicator while checking
-                }
-
-
-                if (snapshot.hasData && snapshot.data != null) {
-
-                  // print('snapshot has data');
-
-                  // If token exists, navigate to HomePage
-                  return NavigationHelperWidget(
-                      loginDTO); // Replace with your main app page
-                } else {
-                  // If token does not exist, navigate to LoginPage
-                  return LoginPage(appName: appName, appHome: this);
-                }
-              },
-            ),
+        LoginPage.routeID: (ctx) => Theme(
+          data: ThemeData.light(),
+          child: FutureBuilder<String?>(
+                future: AuthService.getToken(), // Replace 'token' with your key
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                        child:
+                            CircularProgressIndicator()); // Show loading indicator while checking
+                  }
+          
+          
+                  if (snapshot.hasData && snapshot.data != null) {
+          
+                    // print('snapshot has data');
+          
+                    // If token exists, navigate to HomePage
+                    return NavigationHelperWidget(
+                        loginDTO); // Replace with your main app page
+                  } else {
+                    // If token does not exist, navigate to LoginPage
+                    return LoginPage(appName: appName, appHome: this);
+                  }
+                },
+              ),
+        ),
         NavigationHelperWidget.routeID: (ctx) {
           return NavigationHelperWidget(loginDTO);
         }

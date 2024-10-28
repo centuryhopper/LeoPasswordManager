@@ -1,5 +1,3 @@
-import 'package:PasswordManager/statemanagement/bloc/PasswordVisibility/password_visibility_bloc.dart';
-import 'package:flutter/material.dart';
 import 'package:PasswordManager/Models/LoginDTO.dart';
 import 'package:PasswordManager/Services/AuthService.dart';
 import 'package:PasswordManager/constants.dart';
@@ -7,7 +5,11 @@ import 'package:PasswordManager/main.dart';
 import 'package:PasswordManager/pages/passwordspage.dart';
 import 'package:PasswordManager/pages/profilepage.dart';
 import 'package:PasswordManager/pages/settingspage.dart';
+import 'package:PasswordManager/statemanagement/bloc/DarkMode/darkmode_bloc.dart';
+import 'package:PasswordManager/statemanagement/bloc/DarkMode/darkmode_state.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 LoginDTO? _loginDTO;
 
@@ -29,7 +31,7 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
 
   final List<Widget> pages = [
     PasswordsPage(loginDTO: _loginDTO),
-    SettingsPage(loginDTO: _loginDTO),
+    const SettingsPage(),
     ProfilePage(loginDTO: _loginDTO),
   ];
 
@@ -90,22 +92,45 @@ class _NavigationHelperWidgetState extends State<NavigationHelperWidget>
     setState(() {});
   }
 
+  // Load dark mode preference
+  Future<bool> _loadDarkModePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isDark') ?? false; // Default to false
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (ctx) => PasswordVisibilityBloc())
-        ],
-        child: pages[_selectedIndex]),
+    return FutureBuilder(
+        future: _loadDarkModePreference(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator()); // Show loading indicator
+          }
 
-      // https://api.flutter.dev/flutter/material/BottomNavigationBar-class.html
-      // https://www.youtube.com/watch?v=elLkVWt7gRM&ab_channel=ProgrammingAddict
-      bottomNavigationBar: BottomNavigationBar(
-          items: ourBottomNavBarLst,
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.black,
-          onTap: _onItemTapped),
-    );
+          // Once the future is complete, get the dark mode preference
+          final isDarkMode = snapshot.data ?? false;
+
+          return Scaffold(
+            body: MultiBlocProvider(
+              providers: [
+                BlocProvider(create: (ctx) => DarkModeBloc(isDarkMode)),
+              ],
+              child: BlocBuilder<DarkModeBloc, DarkModeState>(
+                  builder: (context, state) => Theme(
+                        data:
+                            state.isDark ? ThemeData.dark() : ThemeData.light(),
+                        child: pages[_selectedIndex],
+                      )),
+            ),
+            // https://api.flutter.dev/flutter/material/BottomNavigationBar-class.html
+            // https://www.youtube.com/watch?v=elLkVWt7gRM&ab_channel=ProgrammingAddict
+            bottomNavigationBar: BottomNavigationBar(
+                items: ourBottomNavBarLst,
+                currentIndex: _selectedIndex,
+                selectedItemColor: Colors.black,
+                onTap: _onItemTapped),
+          );
+        });
   }
 }

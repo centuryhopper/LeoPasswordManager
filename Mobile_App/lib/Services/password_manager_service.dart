@@ -7,8 +7,10 @@ import 'package:PasswordManager/Models/PasswordAccountDTO.dart';
 class PasswordManagerService {
   static Future<List<PasswordAccountDTO>?> getPasswordAccounts() async {
     // This IP maps localhost on the emulator to your machine's localhost.
-    final url = Uri.parse('https://leopasswordmanager-production.up.railway.app/api/PasswordManager/passwords');
+    final url = Uri.parse(
+        'https://leopasswordmanager-production.up.railway.app/api/PasswordManager/passwords');
     final jwt = await AuthService.getToken();
+    // print('jwt: $jwt');
 
     try {
       final response = await http.get(
