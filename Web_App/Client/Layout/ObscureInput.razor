@@ -1,0 +1,67 @@
+@typeparam TItem where TItem : class, new()
+
+<div class="input-group">
+    <input class="form-control" value="@(GetPropertyValue(Item, ColumnName))" @oninput="(e) => SetPropertyValue(Item, e.Value, ColumnName)" type="@InputType" placeholder="@Placeholder" style="@Style"/>
+    <div class="input-group-append">
+        <div class="input-group-addon">
+            <span class="input-group-text">
+                <a 
+                @onclick="@((m)=> TogglePasswordVisibility(m))"@onkeypress="TogglePasswordVisibility" @onkeypress:preventDefault="true" tabindex="0" style="color: black; cursor: pointer;">
+                    <i class="fa @iconClass field-icon m-1" aria-hidden="true"></i></a>
+            </span>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public TItem Item {get;set;}
+
+    [Parameter]
+    public string Style {get;set;} = "width: 10rem";
+
+    [Parameter]
+    public string ColumnName {get;set;} = null!;
+    [Parameter]
+    public string Placeholder {get;set;} = $"Enter {nameof(ColumnName)}";
+    private bool IsTextVisible = false;
+    private string InputType => IsTextVisible ? "text" : "password";
+    private string iconClass => IsTextVisible ? "fa-eye" : "fa-eye-slash";
+
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        //Console.WriteLine(item);
+        return typeof(TItem).GetProperty(propertyName)?.GetValue(item);
+    }
+
+    private void SetPropertyValue(TItem item, object? value, string propertyName)
+    {
+        var property = typeof(TItem).GetProperty(propertyName);
+        if (property != null && property.CanWrite && value != null)
+        {
+            property.SetValue(item, Convert.ChangeType(value, property.PropertyType));
+        }
+    }
+
+    private void TogglePasswordVisibility(MouseEventArgs mouseEventArgs)
+    {
+        if (mouseEventArgs != null)
+        {
+            IsTextVisible = !IsTextVisible;
+        }
+    }
+
+    private async Task TogglePasswordVisibility(KeyboardEventArgs e)
+    {
+        // Check if the pressed key is either "Space" or "Enter"
+        if (e.Key == " " || e.Key == "Enter")
+        {
+            // Toggle the password visibility
+            IsTextVisible = !IsTextVisible;
+        }
+    }
+
+}

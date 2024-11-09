@@ -19,7 +19,7 @@
                 <p class="form-group">
                     <label for="password">Password</label>
                     <div class="input-group" id="show_hide_password">
-                    <InputText id="password" class="form-control" @bind-Value="loginDTO.Password" type="@passwordType" />
+                        <InputText id="password" class="form-control" @bind-Value="loginDTO.Password" type="@passwordType" />
                         <div class="input-group-append">
                             <div class="input-group-addon">
                                 <span class="input-group-text">
@@ -42,19 +42,19 @@
                 </label>
             </p>
             <p class="m-3">
-                <button disabled="@loading" class="btn btn-primary">
+                <button disabled="@(cooldownTimer.IsCoolingDown)" class="btn btn-primary">
                     @if (loading)
                     {
                         <span class="spinner-border spinner-border-sm mr-1"></span>
                     }
                     Login
                 </button>
-                @if (!string.IsNullOrWhiteSpace(errMsg))
+                @* @if (!string.IsNullOrWhiteSpace(errMsg))
                 {
                     <p class="text-danger m-3">
                         @errMsg
                     </p>
-                }
+                } *@
             </p>
         </div>
     </EditForm>
@@ -116,12 +116,10 @@
     {
         if (cooldownTimer.IsCoolingDown)
         {
-            errMsg = "";
             return;
         }
 
         loading = true;
-        errMsg = ""; // Clear any previous error messages
 
         // Handle login logic here
         //Console.WriteLine("showing modal");
@@ -130,15 +128,8 @@
         if (!response.Flag)
         {
             cooldownTimer.IncrementSubmissionCount();
-            //notificationModal.Show("Error", response.Message, ModalType.ERROR);
-            //Console.WriteLine(response.Message);
-            if (!cooldownTimer.IsCoolingDown)
-            {
-                errMsg = response.Message;
-            }
             return;
         }
-        cooldownTimer.ResetSubmissionCount();
         NavigationManager.NavigateTo("parsed-claims", true);
     }
     private async Task HandleErrors()
