@@ -1,0 +1,343 @@
+@typeparam TItem where TItem : class, new()
+@using System.Linq.Expressions
+@using static Shared.Models.ServiceResponses
+
+
+@* This grid has pagination and filtering and sorting along with all CRUD operations *@
+
+<div class="text-center overflow-auto m-3">
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>
+                    Row #
+                </th>
+                <th>
+                    Actions
+                </th>
+                @foreach (var column in Columns)
+                {
+                    <th>
+                        <button @onclick="@(() => SortData(column))" class="btn btn-primary">
+                            @column @GetSortIcon(column)
+                        </button>
+                        <TextInputFilter Value="@GetFilterValue(column)"
+                            ValueChanged="@(value => SetFilterValue(column, value))" PlaceHolder=@($"Filter by {column}") />
+                    </th>
+                }
+                <th>UPDATE</th>
+                <th>DELETE</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < pagedItems.Count; i++)
+            {
+                int cur = i;
+                <tr>
+                    <td>
+                        <div style="width: 2.5rem;">
+                            @cur
+                        </div>
+                    </td>
+                    <td>
+                        @if (AllowEdits[cur])
+                        {
+                            <button @onclick="@(() => CancelEdit(cur, pagedItems[cur]))" class="btn btn-primary">Cancel</button>
+                        }
+                        else
+                        {
+                            <button @onclick="@(() => BeginEdit(cur))" class="btn btn-primary">Edit</button>
+                        }
+                    </td>
+                    @foreach (var columnName in Columns)
+                    {
+                        <td>
+                            @* edit mode cases *@
+                            @if (!ReadonlyColumns.Contains(columnName) && AllowEdits[cur])
+                            {
+                                @if (EditModeFragments != null && EditModeFragments.TryGetValue(columnName, out var template))
+                                {
+                                    <div class="d-flex align-items-center p-3">
+                                        @template(pagedItems[cur])
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center p-3">
+                                        <input value="@(GetPropertyValue(pagedItems[cur], columnName))"
+                                            @oninput="(e) => SetPropertyValue(pagedItems[cur], e.Value, columnName)"
+                                            class="form-control" style="width: 10rem" />
+                                    </div>
+                                }
+                            }
+                            @* view mode cases *@
+                            else
+                            {
+                                @if (ViewModeFragments != null && ViewModeFragments.TryGetValue(columnName, out var template))
+                                {
+                                    @template(pagedItems[cur])
+                                }
+                                else
+                                {
+                                    <span>@GetPropertyValue(pagedItems[cur], columnName)</span>
+                                }
+                            }
+                        </td>
+                    }
+                    <td>
+                        <button disabled="@(!AllowEdits[cur])" @onclick="@(() => UpdateRow(pagedItems[cur]))"
+                            class="btn btn-primary">Update</button>
+                    </td>
+                    <td>
+                        <button @onclick="@(() => DeleteRow(pagedItems[cur]))" class="btn btn-danger">DELETE</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<ConfirmModal @ref="confirmModal" Title="Warning"
+    BodyText="Are you sure you want to delete this record? THIS ACTION IS IRREVERSIBLE!" />
+<CustomPagination CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="OnPageChanged" />
+
+<AddDynamicItemsModal TItem="TItem" @ref="AddDynamicItemsModal" />
+
+<button class="btn btn-primary" @onclick="AddNewItems">Add New Items</button>
+
+<div class="m-3">
+    <button class="btn btn-info" @onclick="ExportTableAsCsv">Export Table as CSV</button>
+</div>
+
+<NotificationModal @ref="notificationModal" />
+
+<UploadComponent />
+
+@code {
+    ConfirmModal confirmModal = default!;
+    NotificationModal notificationModal = default!;
+    AddDynamicItemsModal<TItem> AddDynamicItemsModal = default!;
+
+    [CascadingParameter(Name = nameof(ValidationChecks))]
+    Func<TItem, GridValidationResponse> ValidationChecks { get; set; }
+
+    [CascadingParameter(Name = nameof(EditModeFragments))]
+    public Dictionary<string, RenderFragment<TItem>>? EditModeFragments { get; set; }
+
+    [Parameter]
+    public Dictionary<string, RenderFragment<TItem>>? ViewModeFragments { get; set; }
+
+    [Parameter]
+    public List<TItem> Items { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<TItem>> OnCreate { get; set; }
+    [Parameter]
+    public EventCallback<TItem> OnUpdate { get; set; }
+    [Parameter]
+    public EventCallback<TItem> OnDelete { get; set; }
+    [CascadingParameter(Name = nameof(ReadonlyColumns))]
+    public List<string> ReadonlyColumns { get; set; }
+
+
+
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    private const int pageSize = 5; // Number of items per page
+    private int TotalPages => (int)Math.Ceiling((double)filteredItems.Count() / pageSize);
+
+    private List<bool> AllowEdits = new();
+    private Dictionary<string, string> FilterValues { get; set; } = new();
+    private List<string>? Columns { get; set; }
+    private IEnumerable<TItem> filteredItems =>
+    Items.Where(item => FilterQuery(item));
+    private List<TItem> pagedItems = new();
+    private string sortColumn;
+    private bool sortAscending = true;
+
+
+    private List<TItem> ItemsToAdd = new();
+
+    private async Task AddNewItems()
+    {
+        ItemsToAdd = await AddDynamicItemsModal.ShowAsync();
+        //ItemsToAdd.ForEach(item => Console.WriteLine(item));
+        if (ItemsToAdd.Any())
+        {
+            await OnCreate.InvokeAsync(ItemsToAdd);
+        }
+    }
+
+    // Handle page change event
+    private void OnPageChanged(int newPage)
+    {
+        //Console.WriteLine("newPage: " + newPage);
+        CurrentPage = newPage;
+        UpdatePagedItems();
+        //StateHasChanged();
+    }
+
+    private void SortData(string columnName)
+    {
+        if (sortColumn == columnName)
+        {
+            sortAscending = !sortAscending; // Toggle sort direction
+        }
+        else
+        {
+            sortColumn = columnName; // Set new column to sort
+            sortAscending = true; // Default to ascending
+        }
+
+        UpdatePagedItems();
+    }
+
+    private void UpdatePagedItems()
+    {
+        var itemsQuery = filteredItems.AsQueryable();
+
+        // Apply sorting using reflection
+        if (!string.IsNullOrWhiteSpace(sortColumn))
+        {
+            var param = Expression.Parameter(typeof(TItem), "item");
+            var property = Expression.PropertyOrField(param, sortColumn);
+            var sortExpression = Expression.Lambda<Func<TItem, object>>(
+            Expression.Convert(property, typeof(object)), param
+            );
+
+            itemsQuery = sortAscending ? itemsQuery.OrderBy(sortExpression) : itemsQuery.OrderByDescending(sortExpression);
+        }
+
+        pagedItems = itemsQuery.Skip((CurrentPage - 1) * pageSize).Take(pageSize).ToList();
+        AllowEdits = Enumerable.Repeat(false, pagedItems.Count).ToList();
+        // Console.WriteLine(AllowEdits.Count);
+
+    }
+
+    private bool FilterQuery(TItem item)
+    {
+        bool nullOrWhiteSpaceCheck = FilterValues.Values.All(
+        filter => string.IsNullOrWhiteSpace(filter)
+        );
+
+        bool containsCheck = Columns
+        .Any(column =>
+        !string.IsNullOrWhiteSpace(FilterValues[column]) &&
+        GetPropertyValue(item, column).ToString().Contains(FilterValues[column], StringComparison.OrdinalIgnoreCase));
+
+        return nullOrWhiteSpaceCheck || containsCheck;
+    }
+
+    protected override void OnParametersSet()
+    {
+        UpdatePagedItems();
+        // Console.WriteLine("parameters changed");
+    }
+    protected override void OnInitialized()
+    {
+        Columns = typeof(TItem).GetProperties().Select(prop => prop.Name).ToList();
+        foreach (var column in Columns)
+        {
+            FilterValues.Add(column, string.Empty);
+        }
+        UpdatePagedItems();
+        //Filters = Enumerable.Repeat(string.Empty, Columns.Count).ToList();
+        // Columns.ForEach(c=>Console.WriteLine(c));
+    }
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        //Console.WriteLine(item);
+        dynamic value = typeof(TItem).GetProperty(propertyName)?.GetValue(item);
+        if (value is IEnumerable<string>)
+        {
+            return string.Join(",", value);
+        }
+
+        return value?.ToString();
+    }
+
+    private void SetPropertyValue(TItem item, object? value, string propertyName)
+    {
+        var property = typeof(TItem).GetProperty(propertyName);
+        if (property != null && property.CanWrite && value != null)
+        {
+            property.SetValue(item, Convert.ChangeType(value, property.PropertyType));
+        }
+    }
+
+    private async Task UpdateRow(TItem item)
+    {
+        var validation = ValidationChecks(item);
+        if (validation.Flag)
+        {
+            await OnUpdate.InvokeAsync(item);
+        }
+        else
+        {
+            
+        }
+    }
+
+    private async Task DeleteRow(TItem item)
+    {
+        await OnDelete.InvokeAsync(item);
+    }
+
+    private async Task CancelEdit(int cur, TItem item)
+    {
+        var validation = ValidationChecks(item);
+        if (validation.Flag)
+        {
+            AllowEdits[cur] = false;
+        }
+        else
+        {
+            
+        }
+    }
+
+    private async Task BeginEdit(int cur)
+    {
+        AllowEdits[cur] = true;
+    }
+
+    private string GetFilterValue(string column)
+    {
+        //Console.WriteLine(column);
+        //Console.WriteLine(FilterValues[column]);
+        return FilterValues.ContainsKey(column) ? FilterValues[column] : "";
+    }
+
+    private void SetFilterValue(string column, string value)
+    {
+        //Console.WriteLine("setting: " + column + " to " + value);
+        FilterValues[column] = value;
+        FilterItems();
+    }
+
+    private void FilterItems()
+    {
+        // Filtering logic based on FilterValues
+        CurrentPage = 1;
+        UpdatePagedItems();
+    }
+
+    private string GetSortIcon(string columnName)
+    {
+        return sortColumn == columnName ? (sortAscending ? "↑" : "↓") : string.Empty; // Return an up or down arrow based on
+    }
+
+    private async Task ExportTableAsCsv()
+    {
+        var result = string.Join(",", Columns);
+        result += '\n';
+        foreach (var acc in Items)
+        {
+            var stringified = Columns.Select(col => GetPropertyValue(acc, col).ToString()?.Replace(",", "+"));
+            result += $"{string.Join(",", stringified)}\n";
+        }
+        await jsRuntime.InvokeVoidAsync("saveAsFile", "sensitive.csv", result);
+    }
+
+}

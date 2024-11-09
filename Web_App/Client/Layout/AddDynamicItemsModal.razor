@@ -1,0 +1,196 @@
+@using static Shared.Models.ServiceResponses
+@typeparam TItem where TItem : class, new()
+
+@if (isVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="display: block; background: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog" style="max-width: 90%; max-height: 50%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Add Items to Your Collection
+                    </p>
+                    <div style="overflow: auto; hyphens: auto;" class="p-1">
+                        <button class="btn btn-primary mt-3 mb-3" @onclick="AddItem">Add New Item</button>
+                        @if (ItemsToAdd.Any())
+                        {
+                            <table class="table-bordered table-striped table-hover table-sm text-center" style="max-width: 90%;">
+                                <thead>
+                                    <tr>
+                                        @foreach (var column in Columns)
+                                        {
+                                            <th>
+                                                @column
+                                            </th>
+                                        }
+                                        <th>
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < ItemsToAdd.Count; i++)
+                                    {
+                                        @* need to set cur to i to avoid index out of bounds error *@
+                                        int cur = i;
+                                        <tr>
+                                            @foreach (var (idx, columnName) in Columns.Select((columnName, idx) => (idx, columnName)))
+                                            {
+                                                <td>
+                                                    @if (EditModeFragments != null && EditModeFragments.TryGetValue(columnName, out var template))
+                                                    {
+                                                        <div class="d-flex align-items-center p-3">
+                                                            @template(ItemsToAdd[cur])
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="d-flex align-items-center p-3">
+                                                            <input value="@(GetPropertyValue(ItemsToAdd[cur], columnName))"
+                                                                @oninput="(e) => SetPropertyValue(ItemsToAdd[cur], e.Value, columnName)" class="form-control"
+                                                                style="width: 10rem" />
+                                                        </div>
+                                                    }
+                                                    <span class="text-danger">@ErrorMessages[idx]</span>
+                                                </td>
+                                            }
+                                            <td>
+                                                <button type="button" class="btn btn-danger" @onclick="(() => RemoveItem(ItemsToAdd[cur]))">Remove</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmChanges">Confirm Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private bool isVisible = false;
+    private TaskCompletionSource<List<TItem>> taskCompletionSource = default!;
+    private List<TItem> ItemsToAdd {get;set;} = new();
+ 
+    [Parameter]
+    public string Title { get; set; } = "Items To Add";
+
+    [CascadingParameter(Name = nameof(ValidationChecks))]
+    Func<TItem, GridValidationResponse> ValidationChecks {get;set;}
+
+    private string[] ErrorMessages {get;set;}
+
+    [CascadingParameter(Name = nameof(EditModeFragments))]
+    public Dictionary<string, RenderFragment<TItem>>? EditModeFragments { get; set; }
+    
+    private List<string>? Columns { get; set; }
+
+    [CascadingParameter(Name = nameof(ReadonlyColumns))]
+    public List<string> ReadonlyColumns {get;set;}
+
+    protected override void OnInitialized()
+    {
+        Columns = typeof(TItem).GetProperties()
+        .Select(prop => prop.Name)
+        .Except(ReadonlyColumns)
+        .ToList();
+
+        ErrorMessages = new string[Columns.Count];
+    }
+
+    private void AddItem()
+    {
+        TItem item = new();
+        ItemsToAdd.Add(item);
+    }
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        //Console.WriteLine(item);
+        return typeof(TItem).GetProperty(propertyName)?.GetValue(item);
+    }
+
+    private void SetPropertyValue(TItem item, object? value, string propertyName)
+    {
+        var property = typeof(TItem).GetProperty(propertyName);
+        if (property != null && property.CanWrite && value != null)
+        {
+            property.SetValue(item, Convert.ChangeType(value, property.PropertyType));
+        }
+    }
+
+    private void RemoveItem(TItem TItem)
+    {
+        ItemsToAdd.Remove(TItem);
+    }
+
+    public Task<List<TItem>> ShowAsync()
+    {
+        isVisible = true;
+        taskCompletionSource = new TaskCompletionSource<List<TItem>>();
+        StateHasChanged();
+        return taskCompletionSource.Task;
+    }
+
+    private void ConfirmChanges()
+    {
+        // find out rows that have errors
+        foreach (var item in ItemsToAdd)
+        {
+            var validation = ValidationChecks(item);
+            //Console.WriteLine(validation.ColumnIndex);
+            if (!validation.Flag)
+            {
+                // reset
+                for (var i = 0;i < ErrorMessages.Length;i++)
+                {
+                    ErrorMessages[i] = "";
+                }
+
+                // show errors
+                foreach (var kvp in validation.ErrorMessagesDict)
+                {
+                    //Console.WriteLine(kvp.Key);
+                    ErrorMessages[kvp.Key] = string.Join(",", kvp.Value);
+                }
+            }
+            else
+            {
+                for (var i = 0;i < ErrorMessages.Length;i++)
+                {
+                    ErrorMessages[i] = "";
+                }
+            }
+        }
+
+        if (ErrorMessages.Any(msg => !string.IsNullOrWhiteSpace(msg)))
+        {
+            return;
+        }
+        isVisible = false;
+
+        //ItemsToAdd = ItemsToAdd.Where(item => ValidationChecks(item).Flag).ToList();
+        taskCompletionSource?.SetResult(ItemsToAdd);
+        ItemsToAdd.Clear();
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        isVisible = false;
+        taskCompletionSource?.SetResult(new());
+        StateHasChanged();
+    }
+}
