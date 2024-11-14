@@ -49,15 +49,15 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
     }
 
     [HttpPost("upload-csv")]
-    public async Task<IActionResult> UploadCSV(IFormFile file)
+    public async Task<IActionResult> UploadCSV(IEnumerable<PasswordAccountDTO> uploadedFileResults)
     {
-        if (file == null || file.Length == 0)
+        if (!uploadedFileResults.Any())
         {
-            return BadRequest(new GeneralResponse(Flag: false, Message: "File is missing or empty."));
+            return BadRequest(new GeneralResponse(Flag: false, Message: "There were no data uploaded"));
         }
 
         var userId = Convert.ToInt32(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        var response = await passwordManagerAccountRepository.UploadCsvAsync(file, userId);
+        var response = await passwordManagerAccountRepository.UploadCsvAsync(uploadedFileResults, userId);
 
         // logger.LogWarning(result.Message);
         // System.Console.WriteLine("nooo");
