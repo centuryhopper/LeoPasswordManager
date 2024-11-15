@@ -70,9 +70,9 @@ public class PasswordManagerController(ILogger<PasswordManagerController> logger
     }
 
     [HttpPost("add-passwords")]
-    public async Task<IActionResult> AddPasswordRecords([FromBody] IEnumerable<PasswordAccountDTO> passwordAccountDTOs)
+    public async Task<IActionResult> AddPasswordRecords([FromBody] string items)
     {
-        // IEnumerable<PasswordAccountDTO> passwordAccountDTOs = JsonConvert.DeserializeObject<IEnumerable<PasswordAccountDTO>>(values);
+        IEnumerable<PasswordAccountDTO> passwordAccountDTOs = JsonConvert.DeserializeObject<IEnumerable<PasswordAccountDTO>>(items);
         var response = await passwordManagerAccountRepository.CreateMultipleAsync(passwordAccountDTOs);
         if (!response.Flag)
         {
